@@ -1,0 +1,1251 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html,body{margin:0}body{font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style></head><body><title>Apilamiento π en el ADN</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: escena 3D a pantalla completa + panel lateral (columna en escritorio, debajo en teléfono). Diseño oscuro deliberado, como una sala de visualización. */
+:root{
+  --bg:#0a0f1d; --panel:#10172a; --raise:#172038; --line:#25304c;
+  --fg:#e8ecf5; --muted:#97a2bd;
+  --up:#4fd1c5; --down:#f2a44b; --cloud:#e2557a;
+  --A:#5cc46a; --T:#ef6b6b; --G:#f2c94c; --C:#5b9cf5;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 390px;height:100%}
+.stage{position:relative;min-width:0;min-height:0;background:radial-gradient(120% 90% at 50% 40%,#131c35 0%,var(--bg) 70%)}
+.stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;top:12px;left:max(14px,env(safe-area-inset-left,0px));right:14px;display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.hud .step{font-family:var(--f-mono);font-size:13px;color:var(--fg);background:rgba(10,15,29,.7);border:1px solid var(--line);border-radius:6px;padding:4px 8px;align-self:flex-start}
+.hud .hint{font-size:12px;color:var(--muted);padding-left:2px}
+.views{position:absolute;bottom:12px;right:max(14px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;left:14px}
+.btn.primary{background:var(--up);color:var(--bg);border-color:var(--up)}
+.btn.primary:hover{border-color:var(--fg)}
+.app.imm{grid-template-columns:minmax(0,1fr)}
+.app.imm .panel,.app.imm .views{display:none}
+.app.imm .stage{position:fixed;inset:0;z-index:40;height:auto;min-height:0;background:#05070f}
+.immbar{position:absolute;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.immbar .tip{flex:1 1 300px;min-width:0;font-size:12px;line-height:1.45;color:var(--muted);background:rgba(10,15,29,.75);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.immbar .tip b{color:var(--fg);font-weight:600}
+.immmove{position:absolute;left:max(14px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
+.immmove .btn{width:44px;height:44px;padding:0;display:grid;place-items:center;font-size:16px;touch-action:none}
+.panel{overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);padding-block:22px 28px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--f-display);font-weight:700;font-size:28px;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--up)}
+.sub{color:var(--muted);margin:6px 0 0;font-size:13px}
+h2{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--raise);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{all:unset;cursor:pointer;text-align:center;padding:8px 6px;border-radius:6px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.btn{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:7px 11px;border-radius:6px;border:1px solid var(--line);background:rgba(16,23,42,.85);color:var(--fg)}
+.btn:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.seq{font-family:var(--f-mono);overflow-x:auto}
+.seq table{border-collapse:separate;border-spacing:2px;font-size:13px}
+.seq td{width:22px;height:24px;text-align:center;border-radius:4px;cursor:pointer;color:var(--bg);font-weight:600}
+.seq td.end{background:none;color:var(--muted);cursor:default;font-weight:400;width:auto;padding:0 4px}
+.seq td.dim{opacity:.35}
+.seq .cap{font-size:12px;color:var(--muted);margin-top:6px;font-family:var(--f-body)}
+.stepnav{display:flex;align-items:center;gap:8px;margin-top:10px}
+.stepnav .lbl{flex:1;font-family:var(--f-mono);font-size:12px;color:var(--fg);text-align:center}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.toggles label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px}
+.toggles input{accent-color:var(--up);width:16px;height:16px}
+.sw{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.slider{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-bottom:12px}
+.slider label{font-size:13px}
+.slider output{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.slider input{grid-column:1/-1;width:100%;accent-color:var(--up)}
+.slider.off{opacity:.45}
+.read{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.read div{background:var(--raise);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.read b{display:block;font-family:var(--f-mono);font-size:16px;font-variant-numeric:tabular-nums;font-weight:600}
+.read span{font-size:11px;color:var(--muted)}
+#chart{width:100%;height:170px;display:block;margin-top:10px;background:var(--raise);border:1px solid var(--line);border-radius:8px}
+.note{font-size:12px;color:var(--muted);margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.learn p{margin:0 0 10px;max-width:65ch}
+.learn p:last-child{margin:0}
+.learn b{color:var(--fg)}
+sub,sup{line-height:0}
+#vrBtn[disabled]{opacity:.5;cursor:not-allowed}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--line);margin-top:-6px}
+.tabs button{all:unset;cursor:pointer;text-align:center;padding:10px 4px 9px;font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-pressed="true"]{color:var(--fg);border-bottom-color:var(--up)}
+.sec{display:flex;flex-direction:column;gap:22px}
+.seg.seg3{grid-template-columns:repeat(3,1fr)}
+.seg.seg3 button{font-size:13px}
+.seg.seg4{grid-template-columns:repeat(4,1fr)}
+.seg.seg4 button{font-size:12px;padding:8px 2px}
+.note b{color:var(--fg)}
+.read b.t{font-size:13px;line-height:1.3}
+#nmr{width:100%;height:190px;display:block;margin-top:12px;background:var(--raise);border:1px solid var(--line);border-radius:8px}
+.refs{margin:0;padding-left:18px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.refs i{color:var(--fg);font-style:italic}
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  .stage{height:60vh;height:60svh;min-height:340px}
+  .panel{border-left:0;border-top:1px solid var(--line);overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="hud">
+      <div class="step" id="hudStep">Paso 5 · 5'-AA-3' / 3'-TT-5'</div>
+      <div class="hint">Arrastra para rotar · pellizca o rueda para acercar</div>
+    </div>
+    <div class="immbar" id="immBar" hidden>
+      <div class="tip"><b>Mirar:</b> arrastra el fondo · <b>Girar una estructura o molécula:</b> arrástrala · <b>Moverte:</b> W A S D o flechas, Q/E para bajar o subir, rueda para avanzar · <b>Salir:</b> Esc</div>
+      <button class="btn" id="immSec">Ir a polielectrolitos</button>
+      <button class="btn" id="immReset">Restablecer</button>
+      <button class="btn primary" id="immExit">Salir</button>
+    </div>
+    <div class="immmove" id="immMove" hidden>
+      <button class="btn" id="mvF" aria-label="Avanzar">▲</button>
+      <button class="btn" id="mvB" aria-label="Retroceder">▼</button>
+    </div>
+    <div class="views">
+      <button class="btn primary" id="v360">Explorar en 360°</button>
+      <button class="btn" id="vSide">Vista lateral</button>
+      <button class="btn" id="vTop">Vista superior</button>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <nav class="tabs" aria-label="Secciones">
+      <button id="tabAdn" aria-pressed="true">1 · ADN</button>
+      <button id="tabPel" aria-pressed="false">2 · Polielectrolitos</button>
+    </nav>
+    <div class="sec" id="secAdn">
+    <header>
+      <h1>Apilamiento <em>π</em> en el ADN</h1>
+      <p class="sub">B-DNA · dodecámero de Dickerson–Drew (5'-CGCGAATTCGCG-3', PDB 1BNA)</p>
+    </header>
+
+    <section>
+      <h2>Modo</h2>
+      <div class="seg" role="group" aria-label="Modo de vista">
+        <button id="mHelix" aria-pressed="true">Doble hélice</button>
+        <button id="mStep" aria-pressed="false">Paso de apilamiento</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Paso de bases</h2>
+      <div class="seq" id="seq"></div>
+      <div class="stepnav">
+        <button class="btn" id="prev" aria-label="Paso anterior">◀</button>
+        <div class="lbl" id="stepLbl"></div>
+        <button class="btn" id="next" aria-label="Paso siguiente">▶</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Capas</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="tOrb" checked> Orbitales p<sub>z</sub></label>
+        <label><input type="checkbox" id="tCloud" checked> Nubes π (δ−)</label>
+        <label><input type="checkbox" id="tHb" checked> Puentes de H</label>
+        <label><input type="checkbox" id="tLbl" checked> Letras de bases</label>
+        <label><input type="checkbox" id="tSpin" checked> Rotación automática</label>
+      </div>
+      <div class="legend" style="margin-top:12px">
+        <span><i class="sw" style="background:var(--A)"></i>A</span>
+        <span><i class="sw" style="background:var(--T)"></i>T</span>
+        <span><i class="sw" style="background:var(--G)"></i>G</span>
+        <span><i class="sw" style="background:var(--C)"></i>C</span>
+        <span><i class="sw" style="background:var(--up)"></i>lóbulo superior</span>
+        <span><i class="sw" style="background:var(--down)"></i>lóbulo inferior</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Geometría</h2>
+      <div class="slider off" id="sepWrap">
+        <label for="sep">Separación entre pares</label><output id="sepOut">3,38 Å</output>
+        <input type="range" id="sep" min="2.9" max="6.5" step="0.02" value="3.38" disabled>
+      </div>
+      <div class="slider">
+        <label for="tw">Giro helicoidal</label><output id="twOut">36,0°</output>
+        <input type="range" id="tw" min="0" max="60" step="0.5" value="36">
+      </div>
+      <p class="note" id="sepHint">La separación se ajusta en el modo «Paso de apilamiento».</p>
+      <div class="read" style="margin-top:12px">
+        <div><b id="rSep">3,38</b><span>separación (Å)</span></div>
+        <div><b id="rOv">—</b><span>solapamiento (Å²)</span></div>
+        <div><b id="rE">−1,00</b><span>E / ε (ilustrativa)</span></div>
+      </div>
+      <canvas id="chart" aria-label="Curva de energía frente a separación"></canvas>
+      <p class="note">Curva ilustrativa tipo Lennard-Jones con mínimo en 3,4 Å, no un cálculo cuántico. Bajo ~3,1 Å domina la repulsión de Pauli entre nubes π. El solapamiento es el área común de los anillos de ambos pares vista desde el eje.</p>
+    </section>
+
+    <section>
+      <h2>Realidad virtual</h2>
+      <button class="btn" id="vrBtn" disabled>Entrar en VR</button>
+      <p class="note">En VR: <b>gatillo</b> sobre el panel para elegir opciones, o sobre una molécula para tomarla y girarla (al soltarla vuelve a su sitio de unión). <b>Grip</b> para tomar y mover toda la escena; con los dos grips, acercas, alejas y giras. <b>Stick izquierdo</b> para desplazarte y <b>derecho</b> para girar y cambiar el tamaño.</p>
+      <p class="note" id="vrNote">Comprobando compatibilidad con WebXR…</p>
+    </section>
+
+    <section class="learn">
+      <h2>Qué estás viendo</h2>
+      <p><b>Anillos aromáticos planos.</b> Los C y N de las bases tienen hibridación sp². Cada átomo del anillo aporta un orbital p<sub>z</sub> perpendicular al plano, y el solapamiento lateral de esos orbitales forma nubes π deslocalizadas sobre y bajo cada anillo.</p>
+      <p><b>Una pila de monedas giradas.</b> En B-DNA los pares quedan a 3,3–3,4 Å, la distancia de contacto de van der Waals entre caras aromáticas, y giran ~36° por paso (~34° en solución, 10,5 pb por vuelta). Prueba el giro en «Vista superior»: cambia cuánto se superponen los anillos.</p>
+      <p><b>No es cara a cara.</b> Las caras π concentran densidad electrónica (δ−) y el borde del anillo, con sus H, queda δ+: es un cuadrupolo. Una superposición parcial y desplazada evita la repulsión entre nubes y deja ganar la dispersión de London, las interacciones dipolo–dipolo de los enlaces C=O y C–N polares y el efecto hidrofóbico.</p>
+      <p><b>Evidencia experimental.</b> El hipocromismo: el ADN apilado absorbe menos a 260 nm, y al desnaturalizarse la absorbancia sube ~35–40 %.</p>
+      <p><b>Depende de la secuencia.</b> Los pasos con GC apilan más fuerte que los AT/TA, y el apilamiento aporta más a la estabilidad del dúplex que los puentes de hidrógeno (Yakovchuk et al., Nucleic Acids Res. 2006).</p>
+    </section>
+    </div>
+
+    <div class="sec" id="secPel" hidden>
+      <header>
+        <h1>Colorantes sobre <em>poli</em>aniones</h1>
+        <p class="sub">Interacción aromática entre PSS y moléculas catiónicas · trabajos de Moreno-Villoslada et al., UACh</p>
+      </header>
+
+      <section>
+        <h2>Polímero</h2>
+        <div class="seg" role="group" aria-label="Polímero">
+          <button id="pPSS" aria-pressed="true">PSS · con anillo</button>
+          <button id="pPVS" aria-pressed="false">PVS · sin anillo</button>
+        </div>
+        <div id="ringBlock" style="margin-top:14px">
+          <h2 style="margin-bottom:8px">Giro de los fenilos</h2>
+          <div class="seg seg4" role="group" aria-label="Giro de los fenilos">
+            <button id="twNone" aria-pressed="false">Sin giro</button>
+            <button id="twSame" aria-pressed="false">Todos igual</button>
+            <button id="twAlt" aria-pressed="true">Alternado</button>
+            <button id="twRand" aria-pressed="false">Aleatorio</button>
+          </div>
+          <div class="slider" id="twWrap" style="margin:10px 0 4px">
+            <label for="ptw">Ángulo de giro</label><output id="ptwOut">90°</output>
+            <input type="range" id="ptw" min="0" max="90" step="5" value="90">
+          </div>
+          <p class="note" id="ringNote"></p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Molécula pequeña</h2>
+        <div class="seg seg3" role="group" aria-label="Molécula">
+          <button id="dMB" aria-pressed="true">Azul de metileno</button>
+          <button id="dRB" aria-pressed="false">Rodamina B</button>
+          <button id="dTTC" aria-pressed="false">TTC</button>
+        </div>
+        <div class="seg" id="phSeg" role="group" aria-label="pH" style="margin-top:8px" hidden>
+          <button id="ph7" aria-pressed="true">pH 7 · zwitterión</button>
+          <button id="ph2" aria-pressed="false">pH 2 · catión</button>
+        </div>
+        <div id="ttcWrap" style="margin-top:12px" hidden>
+          <h2 style="margin-bottom:8px">Unión de TTC a PSS</h2>
+          <div class="seg seg3" role="group" aria-label="Modo de unión de TTC">
+            <button id="tmE" aria-pressed="false">Borde–cara</button>
+            <button id="tmF" aria-pressed="false">Cara–cara</button>
+            <button id="tmS" aria-pressed="true">Sándwich doble</button>
+          </div>
+        </div>
+        <div id="aggWrap" style="margin-top:12px" hidden>
+          <h2 style="margin-bottom:8px">Modelo de agregado sobre PVS</h2>
+          <div class="seg seg3" role="group" aria-label="Modelo de agregado">
+            <button id="agH" aria-pressed="true">Sándwich H</button>
+            <button id="agO" aria-pressed="false">Oblicuo</button>
+            <button id="agJ" aria-pressed="false">Cabeza–cola J</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sal y capas</h2>
+        <div class="slider">
+          <label for="salt">NaCl agregado</label><output id="saltOut">0,000 M</output>
+          <input type="range" id="salt" min="0" max="0.2" step="0.002" value="0">
+        </div>
+        <div class="toggles">
+          <label><input type="checkbox" id="tCone" checked> Cono de apantallamiento</label>
+          <label><input type="checkbox" id="tChg" checked> Cargas</label>
+          <label><input type="checkbox" id="tIon" checked> Iones Na⁺ / Cl⁻</label>
+          <label><input type="checkbox" id="tDist" checked> Distancias entre anillos</label>
+          <label><input type="checkbox" id="tWat" checked> Agua de hidratación (PVS)</label>
+        </div>
+        <div class="legend" style="margin-top:12px">
+          <span><i class="sw" style="background:#8a93ad"></i>C</span>
+          <span><i class="sw" style="background:#6aa6ff"></i>N</span>
+          <span><i class="sw" style="background:#ef6b6b"></i>O</span>
+          <span><i class="sw" style="background:#f2c94c"></i>S</span>
+          <span><i class="sw" style="background:#e8ecf5"></i>H</span>
+          <span><i class="sw" style="background:#b48cf2"></i>Na⁺</span>
+          <span><i class="sw" style="background:#5cc46a"></i>Cl⁻</span>
+          <span><i class="sw" style="background:#5b9cf5;opacity:.6"></i>cono: apantalla</span>
+          <span><i class="sw" style="background:#f2a44b;opacity:.7"></i>toroide: desapantalla</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Resultado</h2>
+        <div class="read">
+          <div><b id="rBound">3/3</b><span>moléculas unidas</span></div>
+          <div><b id="rInt" class="t">—</b><span>interacción</span></div>
+          <div><b id="rBand" class="t">—</b><span id="rBandL">—</span></div>
+        </div>
+        <canvas id="nmr" aria-label="Espectro de 1H-RMN esquemático"></canvas>
+        <p class="note" id="nmrNote"></p>
+      </section>
+
+      <section class="learn">
+        <h2>Qué muestran los trabajos</h2>
+        <p id="dyeText"></p>
+        <p id="aggText" hidden></p>
+        <p><b>La cadena en hélice 3₁.</b> Cada fenilo gira 120° respecto del anterior alrededor del eje, como en el poliestireno isotáctico cristalino (periodo de 6,65 Å cada tres monómeros), y así los anillos quedan lo más separados posible. En esta hélice ideal el anillo más cercano a otro es el de la unidad i+3, en la misma cara y a 6,65 Å; el vecino i+1 queda a unos 7 Å. Ambos están lejos del contacto π–π (3,5–4 Å), así que la hélice deja libres las caras de los anillos para el colorante.</p>
+        <p><b>Girar los fenilos.</b> El giro es alrededor del enlace C(cadena)–C(ipso), y ese eje pasa por el centroide del anillo: los centroides no se mueven y las distancias de 6,65 y 7,22 Å se mantienen. Cambia hacia dónde miran bordes y caras. Con el giro alternado a 90° (anillos impares sin girar, pares girados), el borde de un anillo apunta a la cara de su vecino i+3, que es la geometría borde–cara. Pero ese H queda a unos 4,5 Å del plano del otro anillo, contra ≈ 2,5 Å en un contacto en T: en la hélice ideal sería, a lo sumo, una atracción electrostática débil entre cuadrupolos. Con todos girados igual o al azar, el contacto más corto queda entre 4,7 y 6 Å, y ningún patrón produce choques entre H.</p>
+        <p><b>¿Cuándo hay contacto real?</b> El PSS real es atáctico y en solución es un ovillo flexible. Los contactos entre fenilos vecinos aparecen cuando la cadena se aparta de la hélice; en poliestireno se detectan como fluorescencia de excímero, que según la regla de Hirayama se forma entre cromóforos separados por tres carbonos de cadena, justo la relación entre dos fenilos consecutivos.</p>
+        <p><b>Dos fuerzas que la sal separa.</b> La atracción entre sulfonato (−) y colorante (+) es de largo alcance y el NaCl la apantalla. La interacción aromática entre anillos es de corto alcance y resiste la sal. Por eso, al subir el NaCl, los colorantes se despegan de PVS y siguen sobre PSS (tendencia cualitativa de los ensayos de diafiltración).</p>
+        <p><b>Cómo se ve en RMN.</b> La corriente de anillo de un aromático apantalla a los protones situados sobre su cara (cono azul) y los lleva a campo alto. Los que quedan en el plano del anillo (toroide naranja) se desapantallan. Un protón que apunta a la cara del anillo de PSS, como H6′ de la rodamina B, muestra el mayor corrimiento.</p>
+        <p><b>Puente con el ADN.</b> Es la misma familia de interacciones que estabiliza el apilamiento de bases y la intercalación de colorantes en el ADN de la primera sección.</p>
+      </section>
+
+      <section>
+        <h2>Fuentes</h2>
+        <ol class="refs">
+          <li>Moreno-Villoslada, I.; González, R.; Hess, S.; Rivas, B. L.; Shibue, T.; Nishide, H. <i>J. Phys. Chem. B</i> 2006, 110, 21576–21581. Rodamina B–PSS por ¹H-RMN.</li>
+          <li>Moreno-Villoslada, I.; González, F.; Rivera, L.; Hess, S.; Rivas, B. L.; Shibue, T.; Nishide, H. <i>J. Phys. Chem. B</i> 2007, 111, 6146–6150. TTC–PSS.</li>
+          <li>Moreno-Villoslada, I.; Torres, C.; González, F.; Shibue, T.; Nishide, H. <i>Macromol. Chem. Phys.</i> 2009, 210, 1167–1175. Azul de metileno con PSS, PVS y PAMPS.</li>
+        </ol>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const css = getComputedStyle(document.documentElement);
+const tok = n => css.getPropertyValue(n).trim();
+const fmt = (x,d=2) => x.toFixed(d).replace('.',',').replace('-','−');
+
+const SEQ = 'CGCGAATTCGCG';
+const COMP = {A:'T',T:'A',G:'C',C:'G'};
+const PUR = {A:1,G:1};
+const RISE = 3.38, RB = 8.9, N = SEQ.length;
+const S = {mode:'helix', step:4, sep:3.38, twist:36, orb:true, cloud:true, hb:true, labels:true, spin:true};
+
+/* ---------- geometría de anillos (Å, plano del par: u a lo largo del par, v hacia el surco) ---------- */
+const R6 = 1.39;
+const hexV = (cx,cy) => [...Array(6)].map((_,k)=>{const a=k*Math.PI/3;return [cx+R6*Math.cos(a),cy+R6*Math.sin(a)]});
+function pentOnEdge(a,b,hc){
+  const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2; let nx=mx-hc[0], ny=my-hc[1]; const nl=Math.hypot(nx,ny); nx/=nl; ny/=nl;
+  const s=Math.hypot(a[0]-b[0],a[1]-b[1]); const d=s/(2*Math.tan(Math.PI/5)); const r=s/(2*Math.sin(Math.PI/5));
+  const cx=mx+nx*d, cy=my+ny*d, a0=Math.atan2(a[1]-cy,a[0]-cx);
+  return [...Array(5)].map((_,k)=>[cx+r*Math.cos(a0+k*2*Math.PI/5), cy+r*Math.sin(a0+k*2*Math.PI/5)]);
+}
+const PUR_HEX = hexV(-2.75,0);
+const PUR_PENT = pentOnEdge(PUR_HEX[2],PUR_HEX[3],[-2.75,0]);
+const PUR_TIP = PUR_PENT.reduce((m,p)=>Math.hypot(p[0]+2.75,p[1])>Math.hypot(m[0]+2.75,m[1])?p:m);
+const PYR_HEX = hexV(2.95,0);
+const PYR_ATT = PYR_HEX[1];
+const mir = p => [-p[0],p[1]];
+function baseDef(letter, side){
+  const pur = !!PUR[letter];
+  let rings = pur ? [PUR_HEX,PUR_PENT] : [PYR_HEX];
+  let att = pur ? PUR_TIP : PYR_ATT;
+  const flip = (pur && side==='R') || (!pur && side==='L');
+  if(flip){ rings = rings.map(r=>r.map(mir)); att = mir(att); }
+  return {rings, att, key:(pur?'pur':'pyr')+(flip?'m':'')};
+}
+const bbLocal = side => { const f=(side==='L'?140:40)*Math.PI/180; return [RB*Math.cos(f), RB*Math.sin(f)]; };
+const L3 = (u,v,y=0) => new THREE.Vector3(u,y,-v);
+
+/* ---------- three.js ---------- */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.xr.enabled = true;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40,1,0.05,600);
+camera.position.set(0,24,64);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = .08; controls.autoRotateSpeed = 1.1;
+controls.minDistance = 6; controls.maxDistance = 160;
+
+scene.add(new THREE.HemisphereLight(0xdfe7ff,0x1a1f33,0.85));
+const dl = new THREE.DirectionalLight(0xffffff,0.75); dl.position.set(20,40,30); scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0x88aaff,0.3); dl2.position.set(-30,-10,-20); scene.add(dl2);
+
+const world = new THREE.Group(); scene.add(world);
+const dna = new THREE.Group(); world.add(dna);
+
+const col = c => new THREE.Color(c);
+const std = (c,o={}) => new THREE.MeshStandardMaterial(Object.assign({color:col(c),roughness:.5,metalness:.05},o));
+const ghost = c => std(c,{transparent:true,opacity:.09,depthWrite:false});
+const BC = {A:tok('--A'),T:tok('--T'),G:tok('--G'),C:tok('--C')};
+const M = {base:{},baseG:{}};
+for(const k in BC){ M.base[k]=std(BC[k]); M.baseG[k]=ghost(BC[k]); }
+M.atom = std('#e8ecf5',{roughness:.35}); M.atomG = ghost('#e8ecf5');
+M.bb = std('#7d86a3',{roughness:.6}); M.bbG = ghost('#7d86a3');
+M.p = std('#c4cbe0',{roughness:.4}); M.pG = ghost('#c4cbe0');
+M.up = std(tok('--up'),{transparent:true,opacity:.6,roughness:.3,depthWrite:false});
+M.down = std(tok('--down'),{transparent:true,opacity:.6,roughness:.3,depthWrite:false});
+M.cloud = std(tok('--cloud'),{transparent:true,opacity:.2,roughness:.4,depthWrite:false,side:THREE.DoubleSide});
+M.hb = std('#ffffff',{emissive:col('#8899bb'),emissiveIntensity:.4});
+
+const G = {sph:new THREE.SphereGeometry(1,16,12), cyl:new THREE.CylinderGeometry(1,1,1,10), slab:{}, cloud:{}};
+function shapeOf(r){ const s=new THREE.Shape(); r.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1])); s.closePath(); return s; }
+function slabGeom(key,r){
+  if(!G.slab[key]){ const g=new THREE.ExtrudeGeometry(shapeOf(r),{depth:.34,bevelEnabled:false}); g.rotateX(-Math.PI/2); g.translate(0,-.17,0); G.slab[key]=g; }
+  return G.slab[key];
+}
+function cloudGeom(key,r){
+  if(!G.cloud[key]){ const g=new THREE.ExtrudeGeometry(shapeOf(r),{depth:.05,bevelEnabled:true,bevelThickness:.3,bevelSize:.32,bevelSegments:4,curveSegments:4}); g.rotateX(-Math.PI/2); g.translate(0,-.025,0); G.cloud[key]=g; }
+  return G.cloud[key];
+}
+function cyl(a,b,r,mat){ const d=new THREE.Vector3().subVectors(b,a); const L=d.length(); const m=new THREE.Mesh(G.cyl,mat); m.scale.set(r,L,r); m.position.copy(a).addScaledVector(d,.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize()); return m; }
+function sph(p,r,mat){ const m=new THREE.Mesh(G.sph,mat); m.position.copy(p); m.scale.setScalar(r); return m; }
+const labelMat = {};
+function label(letter){
+  if(!labelMat[letter]){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+    x.font='600 86px "JetBrains Mono", monospace'; x.textAlign='center'; x.textBaseline='middle';
+    x.lineWidth=10; x.strokeStyle='rgba(10,15,29,.85)'; x.strokeText(letter,64,68); x.fillStyle='#fff'; x.fillText(letter,64,68);
+    const t=new THREE.CanvasTexture(c); labelMat[letter]=new THREE.SpriteMaterial({map:t,transparent:true}); }
+  const s=new THREE.Sprite(labelMat[letter]); s.scale.set(1.7,1.7,1); return s;
+}
+
+let heights=[], angles=[], tubes=[];
+function layout(){
+  heights=[0]; for(let i=0;i<N-1;i++) heights.push(heights[i]+((S.mode==='step'&&i===S.step)?S.sep:RISE));
+  angles=[...Array(N)].map((_,i)=>i*S.twist*Math.PI/180);
+}
+function build(){
+  tubes.forEach(g=>g.dispose()); tubes=[];
+  while(dna.children.length) dna.remove(dna.children[0]);
+  layout();
+  const strand={L:[],R:[]}; const ghostStrand = S.mode==='step';
+  for(let i=0;i<N;i++){
+    const inStep = i===S.step || i===S.step+1;
+    const g = ghostStrand && !inStep;
+    const grp = new THREE.Group(); grp.position.y=heights[i]; grp.rotation.y=angles[i];
+    const defs = {};
+    for(const side of ['L','R']){
+      const letter = side==='L'?SEQ[i]:COMP[SEQ[i]];
+      const d = baseDef(letter,side); defs[side]=d;
+      const seen = new Set();
+      d.rings.forEach((r,ri)=>{
+        grp.add(new THREE.Mesh(slabGeom(d.key+ri,r), g?M.baseG[letter]:M.base[letter]));
+        if(inStep && S.cloud){ for(const y of [.95,-.95]){ const c=new THREE.Mesh(cloudGeom(d.key+ri,r),M.cloud); c.position.y=y; grp.add(c);} }
+        r.forEach(p=>{
+          const k=p[0].toFixed(2)+','+p[1].toFixed(2); if(seen.has(k)) return; seen.add(k);
+          grp.add(sph(L3(p[0],p[1]),.24,g?M.atomG:M.atom));
+          if(inStep && S.orb){
+            for(const [y,mat] of [[.92,M.up],[-.92,M.down]]){ const l=new THREE.Mesh(G.sph,mat); l.position.copy(L3(p[0],p[1],y)); l.scale.set(.4,.82,.4); grp.add(l); }
+          }
+        });
+      });
+      const bb = bbLocal(side);
+      grp.add(cyl(L3(d.att[0],d.att[1]), L3(bb[0],bb[1]), .2, g?M.bbG:M.bb));
+      grp.add(sph(L3(bb[0],bb[1]), .62, g?M.pG:M.p));
+      if(S.labels && !g){ const cen = d.rings[0].reduce((a,p)=>[a[0]+p[0]/d.rings[0].length,a[1]+p[1]/d.rings[0].length],[0,0]); const s=label(letter); s.position.copy(L3(cen[0],cen[1],.3)); if(inStep&&(S.orb||S.cloud)) s.position.y=1.9; grp.add(s); }
+      const w = L3(bb[0],bb[1]).applyAxisAngle(new THREE.Vector3(0,1,0),angles[i]); w.y += heights[i]; strand[side].push(w);
+    }
+    if(S.hb && !g){
+      const inner = side => defs[side].rings[0].slice().sort((a,b)=>Math.abs(a[0])-Math.abs(b[0]));
+      const iL=inner('L'), iR=inner('R');
+      const pairs=[[iL[0],iR[0]]];
+      const byV=(arr,sgn)=>arr.slice(1,3).find(p=>Math.sign(p[1])===sgn);
+      pairs.push([byV(iL,-1),byV(iR,-1)]);
+      if(SEQ[i]==='G'||SEQ[i]==='C') pairs.push([byV(iL,1),byV(iR,1)]);
+      pairs.forEach(([a,b])=>{ for(let t=1;t<=5;t++){ const f=t/6; grp.add(sph(L3(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f), .09, M.hb)); } });
+    }
+    dna.add(grp);
+  }
+  for(const side of ['L','R']){
+    const curve = new THREE.CatmullRomCurve3(strand[side]);
+    const tg = new THREE.TubeGeometry(curve, N*16, .5, 10, false); tubes.push(tg);
+    dna.add(new THREE.Mesh(tg, ghostStrand?M.bbG:M.bb));
+  }
+}
+
+/* ---------- solapamiento proyectado ---------- */
+function worldPolys(i){
+  const th=angles[i], c=Math.cos(th), s=Math.sin(th), out=[];
+  for(const side of ['L','R']){
+    const d=baseDef(side==='L'?SEQ[i]:COMP[SEQ[i]],side);
+    d.rings.forEach(r=>out.push(r.map(([u,v])=>{ const x=u, z=-v; return [x*c+z*s, -x*s+z*c]; })));
+  }
+  return out;
+}
+function inPoly(x,y,p){ let ins=false; for(let i=0,j=p.length-1;i<p.length;j=i++){ const [xi,yi]=p[i],[xj,yj]=p[j]; if(((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi) ins=!ins; } return ins; }
+function overlap(){
+  const a=worldPolys(S.step), b=worldPolys(S.step+1), h=.1; let n=0;
+  for(let x=-9;x<=9;x+=h) for(let y=-9;y<=9;y+=h){ if(a.some(p=>inPoly(x,y,p)) && b.some(p=>inPoly(x,y,p))) n++; }
+  return n*h*h;
+}
+
+/* ---------- energía ilustrativa ---------- */
+const LJ = r => { const q=Math.pow(3.4/r,6); return q*q-2*q; };
+const chart = document.getElementById('chart');
+function drawChart(){
+  const dpr=Math.min(devicePixelRatio,2), W=chart.clientWidth, H=chart.clientHeight;
+  chart.width=W*dpr; chart.height=H*dpr; const x=chart.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  const pad={l:36,r:12,t:12,b:26}, r0=2.9, r1=6.5, e0=-1.2, e1=1.2;
+  const X=r=>pad.l+(r-r0)/(r1-r0)*(W-pad.l-pad.r), Y=e=>pad.t+(e1-e)/(e1-e0)*(H-pad.t-pad.b);
+  x.clearRect(0,0,W,H); x.font='11px "JetBrains Mono", monospace'; x.fillStyle=tok('--muted'); x.strokeStyle=tok('--line'); x.lineWidth=1;
+  [-1,0,1].forEach(e=>{ x.beginPath(); x.moveTo(pad.l,Y(e)); x.lineTo(W-pad.r,Y(e)); x.stroke(); x.textAlign='right'; x.textBaseline='middle'; x.fillText(e===0?'0':fmt(e,0),pad.l-6,Y(e)); });
+  [3,4,5,6].forEach(r=>{ x.textAlign='center'; x.textBaseline='top'; x.fillText(r+' Å',X(r),H-pad.b+6); });
+  x.beginPath(); x.strokeStyle=tok('--up'); x.lineWidth=2;
+  for(let r=r0;r<=r1;r+=.01){ const e=Math.max(e0,Math.min(e1,LJ(r))); r===r0?x.moveTo(X(r),Y(e)):x.lineTo(X(r),Y(e)); }
+  x.stroke();
+  x.setLineDash([3,3]); x.strokeStyle=tok('--muted'); x.lineWidth=1; x.beginPath(); x.moveTo(X(3.4),Y(-1)); x.lineTo(X(3.4),H-pad.b); x.stroke(); x.setLineDash([]);
+  const sep = S.mode==='step'?S.sep:RISE, e=LJ(sep), ec=Math.max(e0,Math.min(e1,e));
+  x.fillStyle=tok('--down'); x.beginPath(); x.arc(X(sep),Y(ec),5,0,7); x.fill();
+  x.fillStyle=tok('--muted'); x.textAlign='left'; x.textBaseline='top'; x.fillText('E / ε',pad.l+4,pad.t);
+}
+
+/* ---------- cámara ---------- */
+let anim=null;
+function focus(){ if(S.mode==='step'){ return new THREE.Vector3(0,(heights[S.step]+heights[S.step+1])/2,0);} return new THREE.Vector3(0,heights[N-1]/2,0); }
+function goView(kind){
+  let c,pos;
+  if(S.section==='pel'){ const v=pelView(kind); c=v.t; pos=v.p; }
+  else { c=focus(); const far = S.mode==='step'?24:66;
+    pos = kind==='top' ? c.clone().add(new THREE.Vector3(0,far*1.05,.01)) : c.clone().add(new THREE.Vector3(far*.35,far*.18,far*.93)); }
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ camera.position.copy(pos); controls.target.copy(c); controls.update(); return; }
+  anim={p0:camera.position.clone(),t0:controls.target.clone(),p1:pos,t1:c,s:performance.now()};
+}
+controls.addEventListener('start',()=>{anim=null;});
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+function stepText(i){ const a=SEQ[i],b=SEQ[i+1]; return `5'-${a}${b}-3' / 3'-${COMP[a]}${COMP[b]}-5'`; }
+function seqTable(){
+  const row=(lab0,str,lab1)=>`<tr><td class="end">${lab0}</td>${[...str].map((c,i)=>`<td data-i="${i}" style="background:var(--${c})" class="${(i===S.step||i===S.step+1)?'':'dim'}">${c}</td>`).join('')}<td class="end">${lab1}</td></tr>`;
+  $('seq').innerHTML=`<table>${row("5'",SEQ,"3'")}${row("3'",[...SEQ].map(c=>COMP[c]).join(''),"5'")}</table><div class="cap">Toca una columna para elegir el paso.</div>`;
+  $('seq').querySelectorAll('td[data-i]').forEach(td=>td.onclick=()=>setStep(Math.min(+td.dataset.i,N-2)));
+}
+function refreshReadouts(full){
+  const sep = S.mode==='step'?S.sep:RISE;
+  $('sepOut').textContent=fmt(S.sep)+' Å'; $('twOut').textContent=fmt(S.twist,1)+'°';
+  $('rSep').textContent=fmt(sep); $('rE').textContent=fmt(LJ(sep));
+  if(full) $('rOv').textContent=fmt(overlap(),1);
+  const t=`Paso ${S.step+1}/${N-1} · ${stepText(S.step)}`; $('stepLbl').textContent=stepText(S.step); if(S.section!=='pel') $('hudStep').textContent=t;
+  drawChart();
+}
+function setStep(i){ S.step=Math.max(0,Math.min(N-2,i)); build(); seqTable(); refreshReadouts(true); if(S.mode==='step') goView('side'); }
+function setMode(m){
+  S.mode=m; $('mHelix').setAttribute('aria-pressed',m==='helix'); $('mStep').setAttribute('aria-pressed',m==='step');
+  const on=m==='step'; $('sep').disabled=!on; $('sepWrap').classList.toggle('off',!on); $('sepHint').hidden=on;
+  controls.autoRotate = S.spin && m==='helix';
+  build(); refreshReadouts(true); goView('side'); if(inVR) fitVR();
+}
+$('mHelix').onclick=()=>setMode('helix'); $('mStep').onclick=()=>setMode('step');
+$('prev').onclick=()=>setStep(S.step-1); $('next').onclick=()=>setStep(S.step+1);
+$('vSide').onclick=()=>goView('side'); $('vTop').onclick=()=>goView('top');
+const tg=(id,key)=>$(id).onchange=e=>{ S[key]=e.target.checked; if(key==='spin'){controls.autoRotate=S.spin&&S.mode==='helix';} else build(); };
+tg('tOrb','orb'); tg('tCloud','cloud'); tg('tHb','hb'); tg('tLbl','labels'); tg('tSpin','spin');
+$('sep').oninput=e=>{ S.sep=+e.target.value; build(); refreshReadouts(false); };
+let ovT; $('tw').oninput=e=>{ S.twist=+e.target.value; build(); refreshReadouts(false); clearTimeout(ovT); ovT=setTimeout(()=>$('rOv').textContent=fmt(overlap(),1),120); };
+
+/* ---------- VR ---------- */
+let inVR=false;
+function fitVR(){
+  if(S.section==='pel'){ const s=.055; world.scale.setScalar(s); world.position.set(0,1.3+1*s,-1.2-3*s); }
+  else if(S.mode==='step'){ const s=.11, c=focus(); world.scale.setScalar(s); world.position.set(0,1.3-c.y*s,-.85); }
+  else { const s=.04, c=focus(); world.scale.setScalar(s); world.position.set(0,1.25-c.y*s,-1.1); }
+}
+const vrBtn=$('vrBtn'), vrNote=$('vrNote');
+if(navigator.xr && navigator.xr.isSessionSupported){
+  navigator.xr.isSessionSupported('immersive-vr').then(ok=>{
+    if(ok){ vrBtn.disabled=false; vrNote.textContent='VR disponible en este navegador.'; }
+    else vrNote.textContent='Este navegador no ofrece VR inmersiva. Abre la página en el navegador del Meta Quest.';
+  }).catch(()=>{ vrNote.textContent='La VR está bloqueada dentro de esta vista. Abre la página directamente en el navegador del Meta Quest.'; });
+} else vrNote.textContent='Este navegador no tiene WebXR. Abre la página en el navegador del Meta Quest.';
+vrBtn.onclick=async()=>{
+  try{
+    if(IM.on) exitImm();
+    const session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor','hand-tracking']});
+    renderer.xr.setReferenceSpaceType('local-floor'); await renderer.xr.setSession(session);
+    if(renderer.xr.setFoveation) renderer.xr.setFoveation(1);
+    inVR=true; controls.enabled=false; xrEnter(); fitVR();
+    session.addEventListener('end',()=>{ inVR=false; xrExit(); controls.enabled=true; world.scale.setScalar(1); world.position.set(0,0,0); world.quaternion.identity(); goView('side'); });
+  }catch(err){ vrNote.textContent='No se pudo iniciar la sesión VR: '+(err.message||err); }
+};
+
+/* ---------- bucle ---------- */
+function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); drawChart(); }
+new ResizeObserver(resize).observe(stage); new ResizeObserver(drawChart).observe(chart);
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(()=>{
+  const dt=Math.min(.05,clock.getDelta()), tt=clock.elapsedTime;
+  if(PEL.visible){ updateDyes(tt,dt); ions.forEach(o=>o.m.position.copy(o.home).add(jit(o.ph,tt*.8,o.amp*.35)));
+    waters.forEach(w=>{ w.g.position.copy(w.home).add(jit(w.ph,tt*.9,.25)); w.g.rotation.y+=dt*w.sp; }); }
+  if(inVR) xrUpdate(dt); else if(IM.on) immUpdate(dt);
+  if(anim && !inVR && !IM.on){ const t=Math.min(1,(performance.now()-anim.s)/900), e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    camera.position.lerpVectors(anim.p0,anim.p1,e); controls.target.lerpVectors(anim.t0,anim.t1,e); if(t>=1) anim=null; }
+  if(!inVR && !IM.on) controls.update();
+  renderer.render(scene,camera);
+});
+
+/* =================== Sección 2: polielectrolitos =================== */
+const V3=THREE.Vector3, D=Math.PI/180, XA=new V3(1,0,0), YA=new V3(0,1,0), ZA=new V3(0,0,1);
+const PEL=new THREE.Group(); PEL.visible=false; world.add(PEL);
+const polyG=new THREE.Group(), dyeG=new THREE.Group(), ionG=new THREE.Group(), coneG=new THREE.Group();
+PEL.add(polyG,dyeG,ionG,coneG);
+const P={poly:'PSS', dye:'MB', pH:7, salt:0, cone:true, charges:true, ions:true, dist:true, tw:'alt', twAng:90, seed:0, water:true, agg:'H', ttc:'S'};
+const EL={C:['#8a93ad',.34],N:['#6aa6ff',.36],O:['#ef6b6b',.36],S:['#f2c94c',.5],H:['#e8ecf5',.2],Na:['#b48cf2',.62],Cl:['#5cc46a',.85]};
+const ELM={}; for(const k in EL) ELM[k]=std(EL[k][0],{roughness:.4});
+const fillM=c=>std(c,{transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide});
+const haloM=c=>std(c,{transparent:true,opacity:.14,depthWrite:false,emissive:col(c),emissiveIntensity:.25});
+const PM={bond:std('#5d6680',{roughness:.6}),
+  fill:{PSS:fillM('#4fd1c5'),MB:fillM('#3d7bd9'),RB:fillM('#e2557a'),TTC:fillM('#b48cf2')},
+  neg:haloM('#ef6b6b'), pos:haloM('#5b9cf5'),
+  cone:std('#5b9cf5',{transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide}),
+  tor:std('#f2a44b',{transparent:true,opacity:.22,depthWrite:false})};
+PM.hc=std('#f2a44b',{emissive:col('#f2a44b'),emissiveIntensity:.5});
+
+function polyFill(pts){
+  const c=pts.reduce((a,p)=>a.add(p),new V3()).multiplyScalar(1/pts.length), arr=[];
+  pts.forEach((p,i)=>{ const q=pts[(i+1)%pts.length]; arr.push(c.x,c.y,c.z,p.x,p.y,p.z,q.x,q.y,q.z); });
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3)); g.computeVertexNormals(); return g;
+}
+function clearGroup(g){ while(g.children.length){ const o=g.children[0]; g.remove(o); o.traverse(m=>{ if(m.geometry && m.geometry!==G.sph && m.geometry!==G.cyl) m.geometry.dispose(); }); } }
+class Mol{
+  constructor(){ this.g=new THREE.Group(); this.seen=new Map(); this.H={}; this.halos=[]; }
+  atom(p,el){ const k=p.x.toFixed(2)+','+p.y.toFixed(2)+','+p.z.toFixed(2); if(this.seen.has(k)) return this.seen.get(k);
+    const m=new THREE.Mesh(G.sph,ELM[el]); m.scale.setScalar(EL[el][1]); m.position.copy(p); this.g.add(m); this.seen.set(k,p); return p; }
+  bond(a,b){ this.g.add(cyl(a,b,.12,PM.bond)); }
+  ring(pts,els,fill){ pts.forEach((p,i)=>this.atom(p,(els&&els[i])||'C')); pts.forEach((p,i)=>this.bond(p,pts[(i+1)%pts.length])); if(fill) this.g.add(new THREE.Mesh(polyFill(pts),fill)); }
+  hyd(c,p,name){ const dir=p.clone().sub(c).normalize(); const h=p.clone().addScaledVector(dir,1.08); this.atom(h,'H'); this.bond(p,h); if(name) this.H[name]={pos:h.clone(),dir}; }
+  halo(pos,scale,mat){ const m=new THREE.Mesh(G.sph,mat); m.position.copy(pos); m.scale.copy(scale); this.g.add(m); this.halos.push(m); }
+}
+const hex2=(cx,cy)=>[...Array(6)].map((_,k)=>{ const a=(30+60*k)*D; return new V3(cx+1.39*Math.cos(a),cy+1.39*Math.sin(a),0); });
+const ring3=(c,u,w)=>[...Array(6)].map((_,k)=>{ const a=k*60*D; return c.clone().addScaledVector(u,1.39*Math.cos(a)).addScaledVector(w,1.39*Math.sin(a)); });
+function amine(m,c,p,ethyl){
+  const dir=p.clone().sub(c).normalize(), N=p.clone().addScaledVector(dir,1.36); m.atom(N,'N'); m.bond(p,N);
+  for(const s of [1,-1]){ const d2=dir.clone().applyAxisAngle(ZA,s*60*D), C1=N.clone().addScaledVector(d2,1.47); m.atom(C1,'C'); m.bond(N,C1);
+    if(ethyl){ const d3=d2.clone().applyAxisAngle(ZA,-s*60*D); d3.z=s*.9; d3.normalize(); const C2=C1.clone().addScaledVector(d3,1.53); m.atom(C2,'C'); m.bond(C1,C2); } }
+}
+/* Moléculas en su marco local: plano aromático principal = xy */
+function buildMB(){
+  const m=new Mol(), r=[-2.41,0,2.41].map(x=>hex2(x,0)), c0=new V3(-2.41,0,0), c2=new V3(2.41,0,0);
+  m.ring(r[0],null,PM.fill.MB); m.ring(r[1],['C','S','C','C','N','C'],PM.fill.MB); m.ring(r[2],null,PM.fill.MB);
+  amine(m,c0,r[0][2],false); amine(m,c2,r[2][0],false);
+  [1,3,4].forEach(j=>m.hyd(c0,r[0][j])); [1,5,4].forEach(j=>m.hyd(c2,r[2][j]));
+  m.halo(new V3(0,.2,0),new V3(7.2,3,1.7),PM.pos);
+  m.q=[{p:new V3(0,.2,0),q:1}];
+  m.face=new V3(1.2,.5,0); return m;
+}
+function buildRB(pH){
+  const m=new Mol(), r=[-2.41,0,2.41].map(x=>hex2(x,0)), c0=new V3(-2.41,0,0), c2=new V3(2.41,0,0);
+  m.ring(r[0],null,PM.fill.RB); m.ring(r[1],['C','O','C','C','C','C'],PM.fill.RB); m.ring(r[2],null,PM.fill.RB);
+  amine(m,c0,r[0][2],true); amine(m,c2,r[2][0],true);
+  [1,3,4].forEach(j=>m.hyd(c0,r[0][j])); [1,5,4].forEach(j=>m.hyd(c2,r[2][j]));
+  const bc=new V3(0,-4.26,0), b=ring3(bc,YA,ZA);       // anillo benzoico perpendicular al xanteno
+  m.ring(b,null,PM.fill.RB); m.bond(r[1][4],b[0]);
+  m.hyd(bc,b[2],"H3′"); m.hyd(bc,b[3],"H4′"); m.hyd(bc,b[4],"H5′"); m.hyd(bc,b[5],"H6′");
+  const dir=b[1].clone().sub(bc).normalize(), Cc=b[1].clone().addScaledVector(dir,1.5); m.atom(Cc,'C'); m.bond(b[1],Cc);
+  const O1=Cc.clone().addScaledVector(dir.clone().applyAxisAngle(XA,60*D),1.25), O2=Cc.clone().addScaledVector(dir.clone().applyAxisAngle(XA,-60*D),1.25);
+  m.atom(O1,'O'); m.atom(O2,'O'); m.bond(Cc,O1); m.bond(Cc,O2);
+  if(pH===2){ const Hh=O1.clone().addScaledVector(O1.clone().sub(Cc).normalize(),.97); m.atom(Hh,'H'); m.bond(O1,Hh); }
+  m.halo(new V3(0,.2,0),new V3(8.2,3.1,1.7),PM.pos);
+  if(pH===7) m.halo(Cc,new V3(1.9,1.9,1.9),PM.neg);
+  m.q=[{p:new V3(0,.2,0),q:1}]; if(pH===7) m.q.push({p:Cc.clone(),q:-1});
+  m.edge={P:m.H["H6′"].pos, h:m.H["H6′"].dir, a1:XA.clone()}; m.face=new V3(1.2,.5,0); return m;
+}
+function waterMol(p,r){
+  const hx=Math.sin(52.25*D)*.96, hy=Math.cos(52.25*D)*.96, g=new THREE.Group(), O=new THREE.Mesh(G.sph,ELM.O); O.scale.setScalar(.36); g.add(O);
+  for(const sg of [1,-1]){ const hp=new V3(sg*hx,hy,0), H=new THREE.Mesh(G.sph,ELM.H); H.scale.setScalar(.2); H.position.copy(hp); g.add(H); g.add(cyl(new V3(),hp,.08,PM.bond)); }
+  g.position.copy(p); g.rotation.set(r()*6.28,r()*6.28,r()*6.28); return g;
+}
+function buildTTC(){
+  const m=new Mol(), p5=[90,18,306,234,162].map(a=>new V3(1.131*Math.cos(a*D),1.131*Math.sin(a*D),0));
+  m.ring(p5,['C','N','N','N','N'],PM.fill.TTC);
+  const ph=(v,tw,name)=>{ const dir=v.clone().normalize(), ip=v.clone().addScaledVector(dir,1.45), c=ip.clone().addScaledVector(dir,1.39);
+    const perp=new V3(-dir.y,dir.x,0), w=ZA.clone().multiplyScalar(Math.cos(tw*D)).addScaledVector(perp,Math.sin(tw*D));
+    const pts=ring3(c,dir.clone().negate(),w); m.ring(pts,null,PM.fill.TTC); m.bond(v,pts[0]);
+    for(let k=1;k<6;k++) m.hyd(c,pts[k],(name&&k===3)?name:null); };
+  ph(p5[0],90,'Hp'); ph(p5[3],40); ph(p5[2],40);   // fenilos en C5 (coplanar), N2 y N3 (girados)
+  m.halo(new V3(),new V3(2.3,2.3,1.6),PM.pos);
+  m.q=[{p:new V3(),q:1}];
+  m.phc=new V3(0,1.131+1.45+1.39,0);             // centro del fenilo en C5
+  m.face=m.phc.clone().add(new V3(.8,0,0));
+  // esfera de hidratación (visible con PVS): una capa sobre y bajo el tetrazolio y dos aguas en el plano
+  m.shell=new THREE.Group(); const wr=rng(55);
+  [[0,0,3.2],[2.2,-1.2,3],[-2.2,-1.2,3],[0,0,-3.2],[2.2,-1.2,-3],[-2.2,-1.2,-3],[3.8,1.2,0],[-3.8,1.2,0]].forEach(w=>m.shell.add(waterMol(new V3(...w),wr)));
+  m.g.add(m.shell);
+  m.edge={P:m.H.Hp.pos, h:m.H.Hp.dir, a1:ZA.clone()}; return m;
+}
+
+/* Cadena de 12 unidades en hélice 3₁: cada sustituyente gira 120° alrededor del eje (x).
+   Periodo 6,65 Å cada 3 monómeros, como en el poliestireno isotáctico; C–C de 1,54 Å. */
+const SITES=[1,5,9], HR=1.07, HRISE=1.108;
+let sites=[], sulf=[], polyHalos=[], ringC=[], ringInfo=[], ringStats=null, polyAtoms=[];
+const sandwichOn=()=>P.poly==='PSS'&&P.dye==='TTC'&&P.ttc==='S';
+const partnerOf=k=>k+3<12?k+3:k-3;   // anillo en la misma cara de la hélice
+function ringPhi(k){   // giro del fenilo alrededor del enlace C(cadena)–C(ipso), en grados
+  if(sandwichOn() && SITES.some(sk=>sk===k||partnerOf(sk)===k)) return 90;   // ajuste inducido: caras hacia el eje
+  if(P.tw==='same') return P.twAng;
+  if(P.tw==='alt') return k%2 ? 0 : P.twAng;
+  if(P.tw==='rand'){ const r=rng(101+P.seed*7919); let v=0; for(let i=0;i<=k;i++) v=(r()*2-1)*90; return v; }
+  return 0;
+}
+function contacts(){   // H de un anillo más cercano al centroide de otro (vecinos hasta i±3)
+  let best={d:1e9}, hh=1e9;
+  for(let a=0;a<ringInfo.length;a++) for(let b=0;b<ringInfo.length;b++){ if(a===b||Math.abs(a-b)>3) continue; const B=ringInfo[b];
+    ringInfo[a].H.forEach(h=>{ const dd=h.distanceTo(B.c); if(dd<best.d) best={d:dd,a,b,h:h.clone(),c:B.c.clone(),pl:Math.abs(h.clone().sub(B.c).dot(B.n))};
+      if(b>a) B.H.forEach(h2=>{ hh=Math.min(hh,h.distanceTo(h2)); }); }); }
+  best.hh=hh; return best;
+}
+const distG=new THREE.Group(); PEL.add(distG);
+const txtMat={};
+function textSprite(str){
+  if(!txtMat[str]){ const c=document.createElement('canvas'); c.width=320; c.height=64; const x=c.getContext('2d');
+    x.font='600 34px "JetBrains Mono", monospace'; x.textAlign='center'; x.textBaseline='middle';
+    x.lineWidth=8; x.strokeStyle='rgba(10,15,29,.9)'; x.strokeText(str,160,34); x.fillStyle='#f2c94c'; x.fillText(str,160,34);
+    txtMat[str]=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}); }
+  const sp=new THREE.Sprite(txtMat[str]); sp.scale.set(5.5,1.1,1); sp.renderOrder=5; return sp;
+}
+function addSO3(m,from,S,d,e2,n){
+  m.atom(S,'S'); m.bond(from,S);
+  for(let j=0;j<3;j++){ const t=j*120*D; const O=S.clone().addScaledVector(d,.49).addScaledVector(e2,1.36*Math.cos(t)).addScaledVector(n,1.36*Math.sin(t)); m.atom(O,'O'); m.bond(S,O); }
+  m.halo(S.clone().addScaledVector(d,.5),new V3(1.9,1.9,1.9),PM.neg); sulf.push(S.clone());
+}
+function buildPolymer(){
+  clearGroup(polyG); clearGroup(coneG); clearGroup(distG); sites=[]; sulf=[]; ringC=[]; ringInfo=[];
+  const m=new Mol(), C=[...Array(24)].map((_,i)=>{ const a=60*i*D; return new V3((i-11.5)*HRISE, HR*Math.cos(a), HR*Math.sin(a)); });
+  C.forEach((p,i)=>{ m.atom(p,'C'); if(i) m.bond(C[i-1],p); });
+  for(let k=0;k<12;k++){
+    const cb=C[2*k+1], th=(60+120*k)*D;
+    const d=new V3(0,Math.cos(th),Math.sin(th)), n=new V3(0,-Math.sin(th),Math.cos(th));   // radial y tangencial
+    if(P.poly==='PSS'){
+      const nr=n.clone().applyAxisAngle(d,ringPhi(k)*D), e2=new V3().crossVectors(nr,d).normalize();
+      const c=cb.clone().addScaledVector(d,2.9), pts=ring3(c,d.clone().negate(),e2);
+      m.ring(pts,null,PM.fill.PSS); m.bond(cb,pts[0]); [1,2,4,5].forEach(j=>m.hyd(c,pts[j]));
+      const S=pts[3].clone().addScaledVector(d,1.77); addSO3(m,pts[3],S,d,e2,nr);
+      ringC.push(c); ringInfo.push({c,n:nr,H:[1,2,4,5].map(j=>pts[j].clone().addScaledVector(pts[j].clone().sub(c).normalize(),1.08))});
+      if(SITES.includes(k)) sites.push({c,n:nr,e2,S,d,k});
+    } else {
+      const S=cb.clone().addScaledVector(d,1.8); addSO3(m,cb,S,d,XA,n);
+      if(SITES.includes(k)) sites.push({c:S.clone(),n,e2:XA.clone().negate(),S,d,k});
+    }
+  }
+  if(P.poly==='PSS'){
+    // el colorante se une por la cara del anillo con más espacio libre
+    sites.forEach(st=>{ const room=sg=>Math.min(...ringC.filter(c=>c!==st.c).map(c=>c.distanceTo(st.c.clone().addScaledVector(st.n,3.5*sg))));
+      if(room(-1)>room(1)+.3){ st.n=st.n.clone().negate(); st.e2=st.e2.clone().negate(); } });
+    ringStats=contacts();
+  } else ringStats=null;
+  polyG.add(m.g); polyHalos=m.halos; polyAtoms=[...m.seen.values()];
+  if(P.poly==='PSS'){
+    const s=sites[1], h=3.4, g1=new THREE.ConeGeometry(2.3,h,32,1,true); g1.translate(0,-h/2,0);
+    const grp=new THREE.Group(), down=new THREE.Mesh(g1,PM.cone), up=new THREE.Mesh(g1,PM.cone); up.rotation.x=Math.PI;
+    const tor=new THREE.Mesh(new THREE.TorusGeometry(3.1,.5,12,48),PM.tor); tor.rotation.x=Math.PI/2;
+    grp.add(down,up,tor); grp.position.copy(s.c); grp.quaternion.setFromUnitVectors(YA,s.n); coneG.add(grp);
+    // distancias anillo–anillo: vecino i+1 (girado 120°) e i+3 (misma cara de la hélice)
+    for(const [a,b] of [[6,7],[6,9]]){
+      const A=ringC[a], B=ringC[b], L=A.distanceTo(B), nd=Math.floor(L/.45);
+      for(let t=1;t<nd;t++) distG.add(sph(A.clone().lerp(B,t/nd),.08,M.hb));
+      const lab=textSprite(fmt(L,2)+' Å'), mid=A.clone().lerp(B,.5), out=new V3(0,mid.y,mid.z).normalize();
+      lab.position.copy(mid).addScaledVector(out,1.6); distG.add(lab);
+    }
+    const b=ringStats, nb2=Math.max(2,Math.floor(b.d/.4));
+    for(let t=1;t<nb2;t++) distG.add(sph(b.h.clone().lerp(b.c,t/nb2),.08,PM.hc));
+    const hl=textSprite('H···π '+fmt(b.d,2)+' Å'), hm=b.h.clone().lerp(b.c,.5);
+    hl.position.copy(hm).addScaledVector(new V3(0,hm.y,hm.z).normalize(),1.8); distG.add(hl);
+  }
+  applyLayers(); solvePoses();
+}
+let dyes=[];
+const STACKS=()=>P.poly==='PVS'&&(P.dye==='MB'||P.dye==='RB');
+const NDYE=()=>STACKS()?7:3;
+function buildDyes(){
+  const old=dyes.map(d=>({p:d.g.position.clone(),q:d.g.quaternion.clone()}));
+  clearGroup(dyeG); dyes=[];
+  const N=NDYE();
+  for(let i=0;i<N;i++){ const m=P.dye==='MB'?buildMB():P.dye==='RB'?buildRB(P.pH):buildTTC();
+    if(old[i]){ m.g.position.copy(old[i].p); m.g.quaternion.copy(old[i].q); } else m.g.position.copy(freePos(i,0,N));
+    dyeG.add(m.g); dyes.push(m); }
+  applyLayers(); solvePoses();
+}
+const rng=seed=>{ let s=seed; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; };
+let ions=[];
+function addIon(el,p,amp){ const m=new THREE.Mesh(G.sph,ELM[el]); m.scale.setScalar(EL[el][1]); m.position.copy(p); ionG.add(m); ions.push({m,home:p.clone(),amp,ph:ions.length*1.37}); }
+function buildIons(){
+  clearGroup(ionG); ions=[]; const r=rng(7);
+  sulf.forEach(S=>{ const dir=new V3(r()-.5,-r()*.8-.2,r()-.5).normalize(); addIon('Na',S.clone().addScaledVector(dir,3.2),1.1); });
+  const n=Math.round(P.salt/.2*16);
+  for(let i=0;i<n;i++) for(const el of ['Na','Cl']) addIon(el,new V3(-17+34*r(),-13+24*r(),-9+24*r()),2.2);
+  applyLayers();
+}
+function applyLayers(){
+  polyHalos.forEach(h=>h.visible=P.charges); dyes.forEach(d=>d.halos.forEach(h=>h.visible=P.charges));
+  dyes.forEach(d=>{ if(d.shell) d.shell.visible=P.water&&P.poly==='PVS'; });
+  ionG.visible=P.ions; coneG.visible=P.cone && P.poly==='PSS'; distG.visible=P.dist && P.poly==='PSS'; if(typeof waterG!=='undefined') waterG.visible=P.water && STACKS();
+}
+
+/* Poses */
+const _m1=new THREE.Matrix4(), _m2=new THREE.Matrix4(), tgt={p:new V3(),q:new THREE.Quaternion()}, _e=new THREE.Euler();
+function poseEdge(m,s,out){   // borde (H) del anillo del colorante hacia la cara del anillo de PSS, planos perpendiculares
+  const a1=m.edge.a1, h=m.edge.h.clone().normalize(), a3=new V3().crossVectors(a1,h);
+  _m1.makeBasis(a1,h,a3); _m2.makeBasis(s.e2.clone().negate(), s.n.clone().negate(), s.d.clone());
+  _m2.multiply(_m1.transpose()); out.q.setFromRotationMatrix(_m2);
+  out.p.copy(s.c).addScaledVector(s.n,2.6).sub(m.edge.P.clone().applyQuaternion(out.q));
+}
+function poseFace(m,s,out){   // cara a cara, desplazado, a 3,5 Å
+  _m2.makeBasis(s.e2, new V3().crossVectors(s.n,s.e2), s.n); out.q.setFromRotationMatrix(_m2);
+  out.p.copy(s.c).addScaledVector(s.n,3.5).sub(m.face.clone().applyQuaternion(out.q));
+}
+/* Acomodo sobre PSS: para cada sitio se prueban ambas caras del anillo, giros de 30° alrededor de su normal
+   y (cara a cara) las dos caras del colorante. Se elige la pose con menor energía:
+   choques estéricos (átomos a < 2,6 Å) + interacción de Coulomb con los sulfonatos (−1). */
+function scorePose(m,p,q,others){
+  const atoms=[...m.seen.values()].map(a=>a.clone().applyQuaternion(q).add(p)); let clash=0;
+  for(const a of atoms){
+    for(const b of polyAtoms){ const dd=a.distanceToSquared(b); if(dd<6.76){ const d=2.6-Math.sqrt(dd); clash+=d*d; } }
+    for(const b of others){ const dd=a.distanceToSquared(b); if(dd<9){ const d=3-Math.sqrt(dd); clash+=d*d; } }
+  }
+  let el=0; for(const c of m.q){ const w=c.p.clone().applyQuaternion(q).add(p); for(const S of sulf) el+=-c.q/Math.max(3,w.distanceTo(S)); }
+  return {E:20*el+10*clash, atoms};
+}
+function solveSite(m,s,mode,others){
+  let best=null;
+  for(const sg of [1,-1]) for(let k=0;k<12;k++){
+    const n=s.n.clone().multiplyScalar(sg), e2=s.e2.clone().multiplyScalar(sg).applyAxisAngle(n,k*30*D);
+    const fr={c:s.c,n,e2,d:new V3().crossVectors(e2,n)};
+    for(const f of (mode==='face'?[0,1]:[0])){
+      const out={p:new V3(),q:new THREE.Quaternion()};
+      if(mode==='edge') poseEdge(m,fr,out); else poseFace(m,fr,out);
+      if(f){ const anc=s.c.clone().addScaledVector(n,3.5), r=new THREE.Quaternion().setFromAxisAngle(e2,Math.PI); out.q.premultiply(r); out.p.sub(anc).applyQuaternion(r).add(anc); }
+      const sc=scorePose(m,out.p,out.q,others); if(!best||sc.E<best.E) best={E:sc.E,p:out.p,q:out.q,atoms:sc.atoms};
+    }
+  }
+  return best;
+}
+function sandwichPose(m,s,others){   // fenilo del C5 entre los anillos i e i±3, desplazado 1,5 Å hacia afuera
+  const A=ringC[s.k], B=ringC[partnerOf(s.k)], ctr=A.clone().lerp(B,.5).addScaledVector(s.d,1.5); let best=null;
+  for(const sg of [1,-1]){
+    const z=new V3(sg,0,0), y=s.d.clone().negate(), x=new V3().crossVectors(y,z);
+    _m2.makeBasis(x,y,z); const q=new THREE.Quaternion().setFromRotationMatrix(_m2), p=ctr.clone().sub(m.phc.clone().applyQuaternion(q));
+    const sc=scorePose(m,p,q,others); if(!best||sc.E<best.E) best={E:sc.E,p,q,atoms:sc.atoms};
+  }
+  return best;
+}
+function solvePoses(){
+  dyes.forEach(m=>m.bound=null);
+  if(P.poly!=='PSS'||!sites.length) return;
+  const others=[];
+  dyes.forEach((m,i)=>{ const s=sites[i]; if(!s) return;
+    const wantEdge=(P.dye==='TTC'&&P.ttc==='E')||(P.dye==='RB'&&P.pH===7);
+    const best = (sandwichOn()&&m.phc) ? sandwichPose(m,s,others) : solveSite(m,s,(wantEdge&&m.edge)?'edge':'face',others);
+    m.bound={p:best.p,q:best.q}; others.push(...best.atoms);
+  });
+}
+const jit=(i,t,a)=>new V3(Math.sin(t*.7+i*1.7)+.5*Math.sin(t*1.9+i*.3), Math.sin(t*.5+i*2.3)+.5*Math.sin(t*1.3+i), Math.sin(t*.6+i*.9)+.5*Math.sin(t*1.7+i*2)).multiplyScalar(a);
+const freePos=(i,t,N)=>new V3(-14+28*i/Math.max(1,N-1),-13-(i%2)*4,6).add(jit(i,t*.5,2.2));
+const bindFrac=()=>P.poly==='PSS' ? .95/(1+P.salt/.8) : .95/(1+P.salt/.012);   // tendencia cualitativa
+const nBound=()=>Math.round(NDYE()*bindFrac());
+function updateDyes(t,dt){
+  const nb=nBound(), k=1-Math.exp(-dt*2.5), now=performance.now();
+  dyes.forEach((m,i)=>{
+    if(m.held || (m.free && now<m.free)) return;
+    if(i<nb){
+      if(P.poly==='PSS'){ if(m.bound){ tgt.p.copy(m.bound.p); tgt.q.copy(m.bound.q); } tgt.p.add(jit(i,t,.12)); }
+      else if(P.dye==='MB'||P.dye==='RB'){ poseStack(i,nb,tgt); tgt.p.add(jit(0,t,.3)); }
+      else {   // TTC sobre PVS: hidratado, con una capa de agua entre el tetrazolio y el sulfonato
+        const s=sites[i], z=s.d.clone().negate(), x=s.n.clone().applyAxisAngle(s.d,.4*Math.sin(t*.2+i)+i), y=new V3().crossVectors(z,x);
+        _m2.makeBasis(x,y,z); tgt.q.setFromRotationMatrix(_m2); tgt.p.copy(s.S).addScaledVector(s.d,6.8).add(jit(i,t,.35)); }
+    } else { tgt.p.copy(freePos(i,t,dyes.length)); tgt.q.setFromEuler(_e.set(t*.15+i,t*.11+i*2,t*.07)); }
+    m.g.position.lerp(tgt.p,k); m.g.quaternion.slerp(tgt.q,k);
+  });
+}
+/* Columna de MB paralela a la cadena de PVS (agregado H, caras perpendiculares al eje),
+   separada del polianión por una capa de agua: par iónico separado por solvente. */
+const STK={th:0, R:11, rise:3.4};   // columna sobre la cadena (+y)
+const stkU=()=>new V3(0,Math.cos(STK.th),Math.sin(STK.th)), stkT=()=>new V3(0,-Math.sin(STK.th),Math.cos(STK.th));
+/* a: giro alrededor del eje de apilamiento (°); slip: deslizamiento a lo largo del eje largo (Å) */
+function stackParams(i){
+  const odd=i%2===1;
+  if(P.dye==='MB') return {a:odd?186:-6, slip:0, R:11, rise:3.4};                 // antiparalelo, leve giro
+  if(P.agg==='H') return {a:odd?184:-4, slip:0, R:14.5, rise:3.6};               // sándwich: xantenos superpuestos, benzoicos alternados
+  if(P.agg==='O') return {a:odd?35:-35, slip:0, R:14.5, rise:3.6};               // ejes largos cruzados ~70°
+  return {a:odd?3:-3, slip:odd?2.55:-2.55, R:12, rise:3.6};                      // J: deslizamiento 5,1 Å → ángulo ~35° < 54,7°
+}
+function poseStack(i,nb,out){
+  const sp=stackParams(i), u=stkU(), tt=stkT(), a=sp.a*D, lx=tt.clone().applyAxisAngle(XA,a);
+  _m2.makeBasis(lx, u.clone().negate().applyAxisAngle(XA,a), XA); out.q.setFromRotationMatrix(_m2);
+  out.p.set((i-(nb-1)/2)*sp.rise,0,0).addScaledVector(u,sp.R).addScaledVector(lx,sp.slip);
+}
+const waterG=new THREE.Group(); PEL.add(waterG); let waters=[];
+function buildWater(){
+  clearGroup(waterG); waters=[];
+  if(STACKS()){
+    const wr=P.dye==='RB'?6.0:6.2, r=rng(33), u=stkU(), tt=stkT(), hx=Math.sin(52.25*D)*.96, hy=Math.cos(52.25*D)*.96;
+    for(let ix=0;ix<9;ix++) for(let j=-1;j<=1;j++){
+      const p=new V3(-11.6+ix*2.9+(r()-.5)*.8,0,0).addScaledVector(u,wr+(r()-.5)*1.0).addScaledVector(tt,j*2.6+(r()-.5)*.8);
+      const g=new THREE.Group(), O=new THREE.Mesh(G.sph,ELM.O); O.scale.setScalar(.36); g.add(O);
+      for(const sg of [1,-1]){ const hp=new V3(sg*hx,hy,0), H=new THREE.Mesh(G.sph,ELM.H); H.scale.setScalar(.2); H.position.copy(hp); g.add(H); g.add(cyl(new V3(),hp,.08,PM.bond)); }
+      g.position.copy(p); g.rotation.set(r()*6.28,r()*6.28,r()*6.28); waterG.add(g);
+      waters.push({g,home:p.clone(),ph:waters.length*2.1,sp:.2+r()*.3});
+    }
+  }
+  applyLayers();
+}
+function pelView(kind){
+  if(kind==='top'){ const s=sites[1], c=s.c.clone().addScaledVector(s.n,3); return {t:c, p:c.clone().addScaledVector(s.n,20).addScaledVector(s.d,16).add(new V3(10,0,0))}; }
+  const t=STACKS()?new V3(0,P.dye==='RB'?6:4,2):new V3(0,-1,3), d=Math.max(48,38/(.728*(camera.aspect||1))); return {t, p:t.clone().add(new V3(0,d*.25,d))};
+}
+
+/* RMN esquemática: [δ libre, Δ a campo alto con unión completa, nombre] */
+const NMR={
+  MB:[[7.62,.25,'H1,9'],[7.40,.20,'H2,8'],[7.18,.30,'H4,6']],
+  RB7:[[8.05,-.05,'H3′'],[7.70,.20,'H4′'],[7.68,.40,'H5′'],[7.30,.60,'H6′'],[6.95,.10,''],[6.88,.10,'xanteno'],[6.78,.10,'']],
+  RB2:[[8.20,.05,'H3′'],[7.82,.08,'H4′'],[7.78,.08,'H5′'],[7.42,.10,'H6′'],[7.12,.30,''],[7.02,.30,'xanteno'],[6.92,.30,'']],
+  TTC:[[8.02,.20,'Ph-C5 o'],[7.62,.25,'Ph-C5 m,p'],[7.80,.15,'Ph-N']]
+};
+const nmr=$('nmr');
+function drawNMR(){
+  const W=nmr.clientWidth, H=nmr.clientHeight; if(!W) return;
+  const dpr=Math.min(devicePixelRatio,2); nmr.width=W*dpr; nmr.height=H*dpr; const x=nmr.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+  const peaks=NMR[P.dye==='RB'?'RB'+P.pH:P.dye], f=bindFrac(), fs=P.poly==='PSS'?f:0, agg=STACKS()?nBound()/NDYE():0;
+  const w0=.016, w=w0*(1+2.5*fs+8*agg), amp=1/(1+6*agg);
+  const pad={l:12,r:12,t:26,b:30}, d0=8.5, d1=6.0, X=d=>pad.l+(d0-d)/(d0-d1)*(W-pad.l-pad.r);
+  const lor=(v,c,ww)=>ww*ww/((v-c)*(v-c)+ww*ww);
+  const hump=P.poly==='PSS'?[[7.45,(P.dye==='TTC'?.08:.03)*fs],[6.62,(P.dye==='TTC'?.08:.03)*fs]]:[];
+  const ref=v=>peaks.reduce((s,p)=>s+lor(v,p[0],w0),0)+hump.reduce((s,h)=>s+.3*lor(v,h[0],.16),0);
+  const obs=v=>amp*(w0/w)*peaks.reduce((s,p)=>s+lor(v,p[0]-p[1]*fs,w),0)+hump.reduce((s,h)=>s+.3*lor(v,h[0]-h[1],.16),0);
+  let ymax=0; for(let v=d1;v<=d0;v+=.002) ymax=Math.max(ymax,ref(v),obs(v));
+  const Y=y=>H-pad.b-y/ymax*(H-pad.t-pad.b);
+  x.clearRect(0,0,W,H); x.font='10px "JetBrains Mono", monospace';
+  x.strokeStyle=tok('--line'); x.beginPath(); x.moveTo(pad.l,H-pad.b); x.lineTo(W-pad.r,H-pad.b); x.stroke();
+  x.fillStyle=tok('--muted'); x.textAlign='center'; x.textBaseline='top';
+  for(let d=8.5;d>=5.99;d-=.5) x.fillText(fmt(d,1),X(d),H-pad.b+5);
+  x.textAlign='right'; x.fillText('δ ¹H (ppm) · campo alto →',W-pad.r,H-12);
+  const path=fn=>{ x.beginPath(); for(let px=pad.l;px<=W-pad.r;px++){ const v=d0-(px-pad.l)/(W-pad.l-pad.r)*(d0-d1); const y=Y(fn(v)); px===pad.l?x.moveTo(px,y):x.lineTo(px,y);} };
+  x.setLineDash([3,3]); x.strokeStyle=tok('--muted'); x.lineWidth=1; path(ref); x.stroke(); x.setLineDash([]);
+  path(obs); x.lineTo(W-pad.r,H-pad.b); x.lineTo(pad.l,H-pad.b); x.closePath(); x.fillStyle='rgba(79,209,197,.18)'; x.fill();
+  path(obs); x.strokeStyle=tok('--up'); x.lineWidth=1.6; x.stroke();
+  x.fillStyle=tok('--fg'); x.textAlign='center'; x.textBaseline='bottom';
+  peaks.filter(p=>p[2]).sort((a,b)=>(b[0]-b[1]*fs)-(a[0]-a[1]*fs)).forEach((p,i)=>{ const d=p[0]-p[1]*fs; x.fillText(p[2],X(d),Math.max(12,Y(obs(d))-4-(i%2)*11)); });
+  x.textAlign='left'; x.textBaseline='top'; x.fillStyle=tok('--muted'); x.fillText('- - libre   ── con polímero',pad.l,6);
+}
+
+const DYE_TEXT={
+  MB:'<b>Azul de metileno (MB⁺).</b> Catión plano de fenotiazinio. En agua coexisten el monómero (banda a 666 nm) y el dímero (610 nm). Con PVS, la atracción electrostática de largo alcance concentra el MB alrededor de la cadena y lo autoagrega (banda «polyMB» cerca de 570 nm); 0,1 M de NaCl apaga esa agregación. Con PSS dominan las interacciones aromáticas de corto alcance: menor constante de disociación aparente, resistencia al NaCl y, con un exceso moderado de polímero, MB como monómero sobre los anillos. La constante de disociación y la sensibilidad al NaCl siguen el orden PVS > PAMPS > PSS. En el modelo, sobre PVS el agregado se apila paralelo a la cadena y separado de ella por una capa de agua (par iónico separado por solvente), como corresponde a una atracción de largo alcance que la sal apantalla. El corrimiento al azul de 666 a 610 y a ~570 nm es el esperable para agregados H, con las moléculas cara a cara. Ambas geometrías (columna sobre PVS y cara a cara desplazada sobre PSS) son hipótesis de trabajo; el artículo no las determina.',
+  RB7:'<b>Rodamina B a pH 7.</b> Zwitterión: xanteno con carga positiva deslocalizada y carboxilato en el anillo benzoico (pKa 3,2 cuando está sola y diluida). Con PSS, sus señales de ¹H se ensanchan y se desplazan a campo alto, sobre todo H6′ (0,6 ppm) y H5′. La estructura propuesta, acorde con las reglas de Hunter y Sanders, apoya el borde del anillo benzoico sobre la cara del anillo de PSS. Esta interacción eleva el pKa de la RB, algo que no ocurre con polianiones sin anillos aromáticos. Con PVS, en cambio, la RB se dimeriza y se agrega a lo largo de la cadena; la literatura propone varias geometrías (López Arbeloa y Ruiz Ojeda analizaron dímeros de la forma neutra y de la catiónica), y aquí se pueden comparar tres.',
+  RB2:'<b>Rodamina B a pH 2.</b> Con el carboxilo protonado es un catión. Los protones del xanteno se desplazan a campo alto, lo que los autores interpretan como un estado muy condensado de la RB, coherente con la extinción de fluorescencia observada antes. El modelo lo representa con el xanteno apilado cara a cara, de forma esquemática.',
+  TTC:'<b>Cloruro de 2,3,5-trifeniltetrazolio (TTC).</b> Catión usado como indicador redox: se reduce a formazán rojo. En diafiltración con NaCl 0,02 M se une mucho más a PSS que a PVS o PAMPS. En ¹H-RMN se ensanchan y desplazan a campo alto las señales del TTC y también las del PSS, y hay correlaciones NOE entre ambos. Una de las estructuras propuestas apoya el borde del fenilo menos impedido, pobre en electrones, sobre la cara rica en electrones del bencenosulfonato. Unido a PSS, el TTC pierde capacidad redox.'
+};
+const AGG_TEXT={
+  H:'<b>Rodamina B sobre PVS · sándwich (H).</b> Los xantenos se apilan cara a cara a ~3,6 Å, con los anillos benzoicos alternados hacia lados opuestos para no chocar. Los momentos de transición, a lo largo del eje largo del xanteno, quedan paralelos y la banda se corre al azul: en agua el dímero de RB absorbe a ~515 nm frente a 553 nm del monómero. Los dímeros apagan buena parte de la fluorescencia (autoextinción). En este arreglo la mitad de los carboxilatos apunta hacia el PVS, algo desfavorable a pH 7.',
+  O:'<b>Rodamina B sobre PVS · oblicuo.</b> Planos paralelos con los ejes largos cruzados (~70° en el modelo). El acoplamiento excitónico desdobla la transición en dos bandas, una al azul y otra al rojo del monómero, con intensidades que dependen del ángulo entre los ejes. Los benzoicos quedan girados pero todos lejos de la cadena.',
+  J:'<b>Rodamina B sobre PVS · cabeza–cola (J).</b> Cada xanteno está deslizado ~5 Å a lo largo de su eje largo respecto del vecino, en zigzag. Con un ángulo de deslizamiento menor que 54,7° (criterio de Kasha), la banda se corre al rojo y la emisión se conserva mejor. Todos los benzoicos apuntan hacia afuera.'
+};
+const TTC_TEXT={
+  E:'<b>TTC sobre PSS · borde–cara.</b> La estructura propuesta en el artículo: el borde del fenilo menos impedido apunta a la cara del bencenosulfonato, con los planos perpendiculares.',
+  F:'<b>TTC sobre PSS · cara–cara.</b> El fenilo del C5 se apila paralelo sobre un bencenosulfonato, desplazado, a ~3,5 Å. En un apilamiento cara a cara cada anillo queda en el cono de apantallamiento del otro, lo que explicaría que se desplacen a campo alto tanto los protones del TTC como los del PSS.',
+  S:'<b>TTC sobre PSS · sándwich doble.</b> El fenilo del C5 queda entre dos bencenosulfonatos de la misma cara de la hélice (unidades i e i±3). Esos dos anillos giran 90° para mirar hacia el eje, y como sus centroides están a 6,65 Å, el fenilo queda a ~3,3 Å de cada uno: la hélice 3₁ deja el hueco justo para un anillo intercalado. El fenilo se desplaza ~1,5 Å hacia afuera para no chocar con la cadena principal. Como en el modo cara–cara, explicaría el corrimiento a campo alto de los protones de ambos.',
+  PVS:'<b>TTC sobre PVS.</b> No se ha observado apilamiento de TTC con PVS. En el modelo el catión conserva su esfera de hidratación y queda separado del polímero por una capa de agua: una atracción electrostática débil, que el NaCl apantalla con facilidad.'
+};
+const DYE_NAME={MB:'azul de metileno',RB:'rodamina B',TTC:'TTC'};
+function pelRefresh(){
+  const press=(id,on)=>$(id).setAttribute('aria-pressed',on);
+  press('pPSS',P.poly==='PSS'); press('pPVS',P.poly==='PVS');
+  press('dMB',P.dye==='MB'); press('dRB',P.dye==='RB'); press('dTTC',P.dye==='TTC');
+  press('ph7',P.pH===7); press('ph2',P.pH===2); $('phSeg').hidden=P.dye!=='RB';
+  $('saltOut').textContent=fmt(P.salt,3)+' M';
+  press('twNone',P.tw==='none'); press('twSame',P.tw==='same'); press('twAlt',P.tw==='alt'); press('twRand',P.tw==='rand');
+  $('ringBlock').hidden=P.poly!=='PSS'; const angOn=P.tw==='same'||P.tw==='alt';
+  $('ptw').disabled=!angOn; $('twWrap').classList.toggle('off',!angOn); $('ptwOut').textContent=P.twAng+'°';
+  if(ringStats){ const r=ringStats;
+    $('ringNote').innerHTML=`Contacto más corto: un H del anillo ${r.a+1} queda a <b>${fmt(r.d,2)} Å</b> del centroide del anillo ${r.b+1} (${fmt(r.pl,2)} Å de su plano). En un contacto borde–cara típico, H···centroide ≈ 2,5 Å.`
+      + (r.hh<2.1 ? ` <b>Choque estérico:</b> dos H a ${fmt(r.hh,2)} Å.` : '')
+      + (P.tw==='rand' ? ' Toca «Aleatorio» otra vez para otra combinación.' : '')
+      + (sandwichOn() ? ' En el sándwich doble, los anillos de los sitios y sus vecinos i±3 giran 90°.' : ''); }
+  const nb=nBound(), pss=P.poly==='PSS';
+  $('rBound').textContent=nb+'/'+NDYE();
+  $('rInt').textContent= nb ? (pss?'π–π, corto alcance':(P.dye==='TTC'?'electrostática, separada por agua':'electrostática, largo alcance')) : 'sin unión';
+  let v,l;
+  if(P.dye==='MB'){ l='banda visible'; v = pss ? '666 nm · monómero' : (nb ? '~570 nm · agregados' : '666 nm · libre'); }
+  else if(P.dye==='RB'){ if(pss){ l='pKa de la RB'; v = nb ? 'sube sobre 3,2' : '≈ 3,2'; }
+    else { l='banda visible'; v = !nb ? '553 nm · monómero' : ({H:'~515 nm · H',O:'2 bandas: azul y roja',J:'corrida al rojo · J'})[P.agg]; } }
+  else { l='reducción a formazán'; v = (pss&&nb) ? 'más lenta' : 'normal'; }
+  $('rBand').textContent=v; $('rBandL').textContent=l;
+  $('dyeText').innerHTML=DYE_TEXT[P.dye==='RB'?'RB'+P.pH:P.dye];
+  const showAgg=P.poly==='PVS'&&P.dye==='RB', showTtc=pss&&P.dye==='TTC', ttcPvs=!pss&&P.dye==='TTC';
+  $('aggWrap').hidden=!showAgg; $('ttcWrap').hidden=!showTtc; $('aggText').hidden=!(showAgg||showTtc||ttcPvs);
+  press('agH',P.agg==='H'); press('agO',P.agg==='O'); press('agJ',P.agg==='J');
+  press('tmE',P.ttc==='E'); press('tmF',P.ttc==='F'); press('tmS',P.ttc==='S');
+  if(showAgg) $('aggText').innerHTML=AGG_TEXT[P.agg]; else if(showTtc) $('aggText').innerHTML=TTC_TEXT[P.ttc]; else if(ttcPvs) $('aggText').innerHTML=TTC_TEXT.PVS;
+  $('nmrNote').textContent = (STACKS()&&nb)
+    ? 'Con PVS el colorante se agrega y sus señales se ensanchan hasta casi desaparecer, como ocurre con moléculas confinadas en nanoagregados. Espectro esquemático.'
+    : 'Espectro esquemático: posiciones de partida y la mayoría de los corrimientos son ilustrativos. El corrimiento de 0,6 ppm de H6′ (RB, pH 7, con PSS) es el valor reportado.';
+  if(S.section==='pel') $('hudStep').textContent=`${P.poly} + ${DYE_NAME[P.dye]}${P.dye==='RB'?' · pH '+P.pH:''} · NaCl ${fmt(P.salt,3)} M`;
+  drawNMR();
+}
+function setPoly(p){ P.poly=p; buildPolymer(); buildIons(); buildDyes(); buildWater(); pelRefresh(); goView('side'); }
+function setDye(d){ P.dye=d; buildPolymer(); buildDyes(); buildWater(); pelRefresh(); if(P.poly==='PVS') goView('side'); }
+const setTw=t=>{ if(t==='rand'&&P.tw==='rand') P.seed++; P.tw=t; buildPolymer(); pelRefresh(); };
+$('twNone').onclick=()=>setTw('none'); $('twSame').onclick=()=>setTw('same'); $('twAlt').onclick=()=>setTw('alt'); $('twRand').onclick=()=>setTw('rand');
+$('ptw').oninput=e=>{ P.twAng=+e.target.value; buildPolymer(); pelRefresh(); };
+$('pPSS').onclick=()=>setPoly('PSS'); $('pPVS').onclick=()=>setPoly('PVS');
+$('dMB').onclick=()=>setDye('MB'); $('dRB').onclick=()=>setDye('RB'); $('dTTC').onclick=()=>setDye('TTC');
+const setTtc=t=>{ P.ttc=t; buildPolymer(); buildDyes(); pelRefresh(); };
+$('tmE').onclick=()=>setTtc('E'); $('tmF').onclick=()=>setTtc('F'); $('tmS').onclick=()=>setTtc('S');
+$('agH').onclick=()=>{ P.agg='H'; pelRefresh(); }; $('agO').onclick=()=>{ P.agg='O'; pelRefresh(); }; $('agJ').onclick=()=>{ P.agg='J'; pelRefresh(); };
+$('ph7').onclick=()=>{ P.pH=7; buildDyes(); pelRefresh(); }; $('ph2').onclick=()=>{ P.pH=2; buildDyes(); pelRefresh(); };
+$('salt').oninput=e=>{ P.salt=+e.target.value; buildIons(); pelRefresh(); };
+$('tCone').onchange=e=>{ P.cone=e.target.checked; applyLayers(); };
+$('tChg').onchange=e=>{ P.charges=e.target.checked; applyLayers(); };
+$('tIon').onchange=e=>{ P.ions=e.target.checked; applyLayers(); };
+$('tDist').onchange=e=>{ P.dist=e.target.checked; applyLayers(); };
+$('tWat').onchange=e=>{ P.water=e.target.checked; applyLayers(); };
+new ResizeObserver(drawNMR).observe(nmr);
+
+function setSection(sec){
+  S.section=sec; const pel=sec==='pel';
+  dna.visible=!pel; PEL.visible=pel; $('secAdn').hidden=pel; $('secPel').hidden=!pel;
+  $('tabAdn').setAttribute('aria-pressed',!pel); $('tabPel').setAttribute('aria-pressed',pel);
+  $('vSide').textContent = pel ? 'Vista general' : 'Vista lateral';
+  $('vTop').textContent = pel ? 'Acercar a un sitio' : 'Vista superior';
+  controls.autoRotate = !pel && S.spin && S.mode==='helix';
+  if(pel) pelRefresh(); else refreshReadouts(false);
+  goView('side'); if(inVR) fitVR();
+}
+const fromHash=()=>setSection(location.hash==='#polielectrolitos'?'pel':'adn');
+$('tabAdn').onclick=()=>{ if(location.hash==='#adn') fromHash(); else location.hash='adn'; };
+$('tabPel').onclick=()=>{ if(location.hash==='#polielectrolitos') fromHash(); else location.hash='polielectrolitos'; };
+addEventListener('hashchange',fromHash);
+$('tSpin').onchange=e=>{ S.spin=e.target.checked; controls.autoRotate=S.spin&&S.mode==='helix'&&S.section!=='pel'; };
+
+/* =================== Inmersión: 360° en el navegador y VR con controles =================== */
+const ENV=new THREE.Group(); ENV.visible=false; scene.add(ENV);
+{ const dome=new THREE.Mesh(new THREE.SphereGeometry(60,48,24), new THREE.ShaderMaterial({side:THREE.BackSide, depthWrite:false,
+    uniforms:{top:{value:col('#1d2a58')}, mid:{value:col('#0d1530')}, bot:{value:col('#04060d')}},
+    vertexShader:'varying vec3 vP; void main(){ vP=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader:'uniform vec3 top; uniform vec3 mid; uniform vec3 bot; varying vec3 vP; void main(){ float h=vP.y; vec3 c = h>0.0 ? mix(mid,top,pow(h,0.7)) : mix(mid,bot,pow(-h,0.45)); gl_FragColor=vec4(c,1.0); }'}));
+  dome.renderOrder=-10; ENV.add(dome);
+  const r=rng(909), pts=[]; for(let i=0;i<1600;i++){ const u=r()*1.6-.6, a=r()*6.2832, s2=Math.sqrt(1-u*u); pts.push(55*s2*Math.cos(a),55*u,55*s2*Math.sin(a)); }
+  const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  ENV.add(new THREE.Points(pg,new THREE.PointsMaterial({color:0xa9bcff,size:.14,transparent:true,opacity:.75,depthWrite:false})));
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(9,72),new THREE.MeshBasicMaterial({color:0x0a1124,transparent:true,opacity:.7,depthWrite:false}));
+  disc.rotation.x=-Math.PI/2; disc.position.y=-.003; ENV.add(disc);
+  const grid=new THREE.PolarGridHelper(9,24,9,72,0x3b4f86,0x22305c); grid.material.transparent=true; grid.material.opacity=.6; ENV.add(grid);
+}
+const rc=new THREE.Raycaster(); rc.camera=camera;
+const shown=o=>{ for(;o;o=o.parent) if(!o.visible) return false; return true; };
+function grabTarget(obj){
+  for(let o=obj;o;o=o.parent){
+    const d=dyes.find(m=>m.g===o); if(d) return {obj:d.g, dye:d, c:new V3()};
+    if(o===PEL) return {obj:PEL, c:new V3(0,0,2)};
+    if(o===dna) return {obj:dna, c:focus()};
+  }
+  return null;
+}
+function pickHit(){ const hits=rc.intersectObject(S.section==='pel'?PEL:dna,true); for(const h of hits){ if(!h.object.isPoints && shown(h.object)) return grabTarget(h.object); } return null; }
+function rotateAbout(obj,cLocal,qW){
+  obj.parent.updateMatrixWorld(); const pq=obj.parent.getWorldQuaternion(new THREE.Quaternion());
+  const qP=pq.clone().invert().multiply(qW).multiply(pq);
+  obj.updateMatrix(); const cP=cLocal.clone().applyMatrix4(obj.matrix);
+  obj.quaternion.premultiply(qP); obj.position.sub(cP).applyQuaternion(qP).add(cP);
+}
+function resetStructures(){ for(const o of [dna,PEL]){ o.position.set(0,0,0); o.quaternion.identity(); } dyes.forEach(m=>{ m.held=false; m.free=0; }); }
+function sectionCenterWorld(){ world.updateMatrixWorld(); return S.section==='pel' ? new V3(0,0,2).applyMatrix4(PEL.matrixWorld) : focus().applyMatrix4(dna.matrixWorld); }
+
+/* ---- 360° en el navegador ---- */
+const IM={on:false,yaw:0,pitch:0,keys:new Set(),drag:null,fov:40,mv:0};
+const appEl=document.querySelector('.app'), cvs=renderer.domElement;
+function envPlace(){ ENV.scale.setScalar(8); ENV.position.set(0, S.section==='pel'?-19:-12, 0); }
+function immStart(){
+  world.updateMatrixWorld();
+  const look=sectionCenterWorld(), pos=look.clone().add(S.section==='pel'?new V3(0,2,17):(S.mode==='step'?new V3(0,3,11):new V3(0,2,16)));
+  camera.position.copy(pos); const d=look.clone().sub(pos).normalize();
+  IM.yaw=Math.atan2(-d.x,-d.z); IM.pitch=Math.asin(d.y);
+}
+function immSecLabel(){ $('immSec').textContent = S.section==='pel' ? 'Ir al ADN' : 'Ir a polielectrolitos'; }
+function enterImm(){
+  if(IM.on||inVR) return; IM.on=true; appEl.classList.add('imm'); $('immBar').hidden=false; $('immMove').hidden=false;
+  anim=null; controls.enabled=false; IM.fov=camera.fov; camera.fov=72; camera.updateProjectionMatrix();
+  ENV.visible=true; envPlace(); immStart(); immSecLabel();
+  $('hudStep').parentElement.querySelector('.hint').textContent='Modo 360°';
+  try{ const pr=stage.requestFullscreen && stage.requestFullscreen(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){}
+  setTimeout(resize,80);
+}
+function exitImm(){
+  if(!IM.on) return; IM.on=false; IM.keys.clear(); IM.mv=0; IM.drag=null;
+  appEl.classList.remove('imm'); $('immBar').hidden=true; $('immMove').hidden=true;
+  camera.fov=IM.fov; camera.updateProjectionMatrix(); ENV.visible=false; controls.enabled=true;
+  controls.autoRotate = S.section!=='pel' && S.spin && S.mode==='helix';
+  $('hudStep').parentElement.querySelector('.hint').textContent='Arrastra para rotar · pellizca o rueda para acercar';
+  if(document.fullscreenElement){ try{ const pr=document.exitFullscreen(); if(pr&&pr.catch) pr.catch(()=>{}); }catch(e){} }
+  setTimeout(()=>{ resize(); goView('side'); },80);
+}
+document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement && IM.on) exitImm(); else setTimeout(resize,50); });
+$('v360').onclick=enterImm; $('immExit').onclick=exitImm;
+$('immReset').onclick=()=>{ resetStructures(); immStart(); };
+$('immSec').onclick=()=>{ (S.section==='pel'?$('tabAdn'):$('tabPel')).click(); setTimeout(()=>{ envPlace(); immStart(); immSecLabel(); },80); };
+const ndc=e=>{ const r=cvs.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1); };
+cvs.addEventListener('pointerdown',e=>{
+  if(!IM.on) return; rc.setFromCamera(ndc(e),camera); const tg=pickHit();
+  IM.drag={x:e.clientX,y:e.clientY,tg,id:e.pointerId}; if(tg&&tg.dye) tg.dye.held=true;
+  try{ cvs.setPointerCapture(e.pointerId); }catch(_){}
+  cvs.style.cursor=tg?'grabbing':'move';
+});
+cvs.addEventListener('pointermove',e=>{
+  if(!IM.on||!IM.drag||IM.drag.id!==e.pointerId) return;
+  const dx=e.clientX-IM.drag.x, dy=e.clientY-IM.drag.y; IM.drag.x=e.clientX; IM.drag.y=e.clientY; const tg=IM.drag.tg;
+  if(tg){ const up=new V3(0,1,0).applyQuaternion(camera.quaternion), rt=new V3(1,0,0).applyQuaternion(camera.quaternion);
+    rotateAbout(tg.obj,tg.c,new THREE.Quaternion().setFromAxisAngle(up,dx*.008).multiply(new THREE.Quaternion().setFromAxisAngle(rt,dy*.008))); }
+  else { IM.yaw+=dx*.0045; IM.pitch=Math.max(-1.45,Math.min(1.45,IM.pitch+dy*.0045)); }
+});
+const endDrag=e=>{ if(!IM.drag||(e&&IM.drag.id!==e.pointerId)) return; const tg=IM.drag.tg; if(tg&&tg.dye){ tg.dye.held=false; tg.dye.free=performance.now()+2500; } IM.drag=null; cvs.style.cursor=''; };
+cvs.addEventListener('pointerup',endDrag); cvs.addEventListener('pointercancel',endDrag);
+cvs.addEventListener('wheel',e=>{ if(!IM.on) return; e.preventDefault(); camera.position.addScaledVector(new V3(0,0,-1).applyQuaternion(camera.quaternion), -e.deltaY*.02); },{passive:false});
+addEventListener('keydown',e=>{ if(!IM.on) return; if(e.code==='Escape'){ exitImm(); return; } IM.keys.add(e.code); if(/^Arrow|^Space$/.test(e.code)) e.preventDefault(); });
+addEventListener('keyup',e=>IM.keys.delete(e.code));
+addEventListener('blur',()=>IM.keys.clear());
+for(const [id,v] of [['mvF',1],['mvB',-1]]){ const b=$(id);
+  b.addEventListener('pointerdown',e=>{ IM.mv=v; try{ b.setPointerCapture(e.pointerId); }catch(_){} });
+  for(const ev of ['pointerup','pointercancel','pointerleave']) b.addEventListener(ev,()=>{ IM.mv=0; }); }
+const _eul=new THREE.Euler(0,0,0,'YXZ');
+function immUpdate(dt){
+  camera.quaternion.setFromEuler(_eul.set(IM.pitch,IM.yaw,0,'YXZ'));
+  const k=c=>IM.keys.has(c), sp=14*dt*(k('ShiftLeft')||k('ShiftRight')?2.5:1);
+  const fw=(k('KeyW')||k('ArrowUp')?1:0)-(k('KeyS')||k('ArrowDown')?1:0)+IM.mv, st=(k('KeyD')||k('ArrowRight')?1:0)-(k('KeyA')||k('ArrowLeft')?1:0), up=(k('KeyE')||k('Space')?1:0)-(k('KeyQ')?1:0);
+  if(fw||st||up){ camera.position.addScaledVector(new V3(0,0,-1).applyQuaternion(camera.quaternion),fw*sp).addScaledVector(new V3(1,0,0).applyQuaternion(camera.quaternion),st*sp); camera.position.y+=up*sp; }
+}
+
+/* ---- VR: controles, panel flotante y manipulación ---- */
+const XR={ctrl:[],two:null,sig:'',hover:null};
+const PAN={w:1024,h:800};
+const pcv=document.createElement('canvas'); pcv.width=PAN.w; pcv.height=PAN.h; const pctx=pcv.getContext('2d');
+const ptex=new THREE.CanvasTexture(pcv);
+const panel=new THREE.Mesh(new THREE.PlaneGeometry(.64,.5),new THREE.MeshBasicMaterial({map:ptex,transparent:true,depthWrite:false}));
+panel.position.set(-.8,1.2,-.62); panel.lookAt(0,1.45,0); panel.visible=false; panel.renderOrder=20; scene.add(panel);
+const clickEl=id=>()=>$(id).click();
+const salt=dlt=>()=>{ const el=$('salt'); el.value=Math.max(0,Math.min(.2,+el.value+dlt)).toFixed(3); el.dispatchEvent(new Event('input')); };
+function panelButtons(){
+  const B=[]; let y=124; const pel=S.section==='pel';
+  const row=items=>{ const gap=12, W=PAN.w-56, w=(W-gap*(items.length-1))/items.length; items.forEach((it,i)=>B.push(Object.assign({x:28+i*(w+gap),y,w,h:64},it))); y+=76; };
+  row([{label:'1 · ADN',on:!pel,act:clickEl('tabAdn')},{label:'2 · Polielectrolitos',on:pel,act:clickEl('tabPel')}]);
+  if(!pel){
+    row([{label:'Doble hélice',on:S.mode==='helix',act:clickEl('mHelix')},{label:'Paso de apilamiento',on:S.mode==='step',act:clickEl('mStep')}]);
+    row([{label:'◀  Paso anterior',act:clickEl('prev')},{label:'Paso siguiente  ▶',act:clickEl('next')}]);
+    row([{label:'Orbitales pz',on:$('tOrb').checked,act:clickEl('tOrb')},{label:'Nubes π',on:$('tCloud').checked,act:clickEl('tCloud')},{label:'Puentes de H',on:$('tHb').checked,act:clickEl('tHb')}]);
+    row([{label:'Letras',on:$('tLbl').checked,act:clickEl('tLbl')},{label:'Restablecer vista',act:()=>{ resetStructures(); fitVR(); }}]);
+  } else {
+    row([{label:'PSS · con anillo',on:P.poly==='PSS',act:clickEl('pPSS')},{label:'PVS · sin anillo',on:P.poly==='PVS',act:clickEl('pPVS')}]);
+    row([{label:'Azul de metileno',on:P.dye==='MB',act:clickEl('dMB')},{label:'Rodamina B',on:P.dye==='RB',act:clickEl('dRB')},{label:'TTC',on:P.dye==='TTC',act:clickEl('dTTC')}]);
+    if(P.dye==='RB') row([{label:'pH 7 · zwitterión',on:P.pH===7,act:clickEl('ph7')},{label:'pH 2 · catión',on:P.pH===2,act:clickEl('ph2')}]);
+    if(P.dye==='RB'&&P.poly==='PVS') row([{label:'Sándwich H',on:P.agg==='H',act:clickEl('agH')},{label:'Oblicuo',on:P.agg==='O',act:clickEl('agO')},{label:'Cabeza–cola J',on:P.agg==='J',act:clickEl('agJ')}]);
+    if(P.dye==='TTC'&&P.poly==='PSS') row([{label:'Borde–cara',on:P.ttc==='E',act:clickEl('tmE')},{label:'Cara–cara',on:P.ttc==='F',act:clickEl('tmF')},{label:'Sándwich doble',on:P.ttc==='S',act:clickEl('tmS')}]);
+    row([{label:'NaCl  −',act:salt(-.01)},{label:'NaCl  +',act:salt(.01)},{label:'Cargas',on:P.charges,act:clickEl('tChg')},{label:'Agua',on:P.water,act:clickEl('tWat')}]);
+    row([{label:'Restablecer vista',act:()=>{ resetStructures(); fitVR(); }}]);
+  }
+  return B;
+}
+function rr(x,X,Y,W,H,R){ x.beginPath(); x.moveTo(X+R,Y); x.arcTo(X+W,Y,X+W,Y+H,R); x.arcTo(X+W,Y+H,X,Y+H,R); x.arcTo(X,Y+H,X,Y,R); x.arcTo(X,Y,X+W,Y,R); x.closePath(); }
+function fitText(x,t,maxW,size,weight,fam){ let f=size; do{ x.font=`${weight} ${f}px ${fam}`; f-=1; }while(x.measureText(t).width>maxW && f>14); }
+const FB='"Instrument Sans", "Segoe UI", system-ui, sans-serif', FM='"JetBrains Mono", ui-monospace, monospace';
+function panelStatus(){ return S.section==='pel'
+  ? `Unidas ${$('rBound').textContent} · ${$('rInt').textContent} · ${$('rBandL').textContent}: ${$('rBand').textContent}`
+  : `Separación ${$('rSep').textContent} Å · solapamiento ${$('rOv').textContent} Å² · giro ${fmt(S.twist,1)}°`; }
+function drawPanel(B){
+  const x=pctx; x.clearRect(0,0,PAN.w,PAN.h);
+  rr(x,4,4,PAN.w-8,PAN.h-8,28); x.fillStyle='rgba(16,23,42,.94)'; x.fill(); x.lineWidth=3; x.strokeStyle='#33406a'; x.stroke();
+  x.textBaseline='middle'; x.textAlign='left'; x.fillStyle='#e8ecf5'; fitText(x,$('hudStep').textContent,PAN.w-56,34,600,FM); x.fillText($('hudStep').textContent,28,48);
+  x.fillStyle='#97a2bd'; const st=panelStatus(); fitText(x,st,PAN.w-56,24,500,FB); x.fillText(st,28,92);
+  const maxY=B.reduce((m,b)=>Math.max(m,b.y+b.h),0);
+  B.forEach((b,i)=>{ rr(x,b.x,b.y,b.w,b.h,14); x.fillStyle=b.on?'#e8ecf5':(XR.hover===i?'#2b3863':'#172038'); x.fill(); x.lineWidth=2; x.strokeStyle=XR.hover===i?'#4fd1c5':'#25304c'; x.stroke();
+    x.fillStyle=b.on?'#0a0f1d':'#e8ecf5'; x.textAlign='center'; fitText(x,b.label,b.w-20,27,600,FB); x.fillText(b.label,b.x+b.w/2,b.y+b.h/2+1); });
+  x.textAlign='left'; x.fillStyle='#97a2bd'; x.font=`500 21px ${FB}`;
+  [ 'Gatillo: elegir en el panel o tomar una molécula · Grip: mover la escena',
+    'Dos grips: acercar y girar · Stick izq.: desplazarse · Stick der.: girar y escalar' ].forEach((t,i)=>x.fillText(t,28,Math.min(PAN.h-56,maxY+36)+i*30));
+  ptex.needsUpdate=true;
+}
+let PB=[];
+function panelHit(st){ aim(st); const h=rc.intersectObject(panel)[0]; if(!h||!h.uv) return null; const px=h.uv.x*PAN.w, py=(1-h.uv.y)*PAN.h; const i=PB.findIndex(b=>px>=b.x&&px<=b.x+b.w&&py>=b.y&&py<=b.y+b.h); return {i,d:h.distance,p:h.point}; }
+function aim(st){ st.c.updateMatrixWorld(); rc.ray.origin.setFromMatrixPosition(st.c.matrixWorld); rc.ray.direction.set(0,0,-1).transformDirection(st.c.matrixWorld); }
+const wpos=o=>new V3().setFromMatrixPosition(o.matrixWorld);
+function buzz(st,a=.35,ms=25){ try{ const h=st.src&&st.src.gamepad&&st.src.gamepad.hapticActuators; if(h&&h[0]&&h[0].pulse) h[0].pulse(a,ms); }catch(_){} }
+function startGrab(st,tg){
+  st.grab=tg; if(tg.dye) tg.dye.held=true;
+  tg.obj.updateMatrixWorld(); st.c.updateMatrixWorld();
+  tg.off=new THREE.Matrix4().copy(st.c.matrixWorld).invert().multiply(tg.obj.matrixWorld);
+  const o=XR.ctrl.find(x=>x!==st&&x.grab&&x.grab.obj===world);
+  if(o&&tg.obj===world){ const a=wpos(o.c), b=wpos(st.c); world.updateMatrix(); XR.two={a:o,b:st,mid0:a.clone().add(b).multiplyScalar(.5),v0:b.clone().sub(a),M0:world.matrix.clone()}; }
+  buzz(st);
+}
+function endGrab(st){
+  const g=st.grab; if(!g) return; st.grab=null;
+  if(g.dye){ g.dye.held=false; g.dye.free=performance.now()+2500; }
+  if(XR.two&&(XR.two.a===st||XR.two.b===st)){ const other=XR.two.a===st?XR.two.b:XR.two.a; XR.two=null;
+    if(other.grab){ other.c.updateMatrixWorld(); world.updateMatrixWorld(); other.grab.off=new THREE.Matrix4().copy(other.c.matrixWorld).invert().multiply(world.matrixWorld); } }
+}
+function applyGrab(st){
+  const g=st.grab; st.c.updateMatrixWorld(); const mW=new THREE.Matrix4().multiplyMatrices(st.c.matrixWorld,g.off);
+  const par=g.obj.parent; par.updateMatrixWorld(); new THREE.Matrix4().copy(par.matrixWorld).invert().multiply(mW).decompose(g.obj.position,g.obj.quaternion,new V3());
+}
+const rayGeo=new THREE.BufferGeometry().setFromPoints([new V3(0,0,0),new V3(0,0,-1)]);
+for(let k=0;k<2;k++){
+  const c=renderer.xr.getController(k); scene.add(c);
+  const line=new THREE.Line(rayGeo,new THREE.LineBasicMaterial({color:0x4fd1c5,transparent:true,opacity:.85})); line.scale.z=3; c.add(line);
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(.007,12,8),new THREE.MeshBasicMaterial({color:0xffffff})); dot.visible=false; scene.add(dot);
+  const grip=renderer.xr.getControllerGrip(k); scene.add(grip);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.016,.022,.1,16),std('#2b3863',{roughness:.4})); body.rotation.x=Math.PI/2.4; grip.add(body);
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(.014,14,10),std('#4fd1c5',{emissive:col('#4fd1c5'),emissiveIntensity:.4})); tip.position.set(0,-.01,-.05); grip.add(tip);
+  const st={c,line,dot,grip,src:null,grab:null};
+  c.addEventListener('connected',e=>{ st.src=e.data; }); c.addEventListener('disconnected',()=>{ st.src=null; endGrab(st); });
+  c.addEventListener('selectstart',()=>{
+    const ph=panelHit(st); if(ph){ if(ph.i>=0){ PB[ph.i].act(); buzz(st,.5,30); } return; }
+    aim(st); const tg=pickHit(); if(tg) startGrab(st,tg);
+  });
+  c.addEventListener('selectend',()=>{ if(st.grab&&st.grab.obj!==world) endGrab(st); });
+  c.addEventListener('squeezestart',()=>{ if(!st.grab) startGrab(st,{obj:world,c:new V3()}); });
+  c.addEventListener('squeezeend',()=>{ if(st.grab&&st.grab.obj===world) endGrab(st); });
+  XR.ctrl.push(st);
+}
+function xrEnter(){ ENV.visible=true; ENV.scale.setScalar(1); ENV.position.set(0,0,0); panel.visible=true; XR.sig=''; }
+function xrExit(){ ENV.visible=IM.on; panel.visible=false; XR.ctrl.forEach(st=>{ endGrab(st); st.dot.visible=false; }); XR.two=null; }
+const dz=v=>Math.abs(v)<.18?0:v;
+function xrUpdate(dt){
+  // panel: hover y redibujo solo cuando algo cambia
+  PB=panelButtons(); let hov=null;
+  for(const st of XR.ctrl){ const ph=panelHit(st);
+    if(ph){ st.line.scale.z=ph.d; st.dot.visible=true; st.dot.position.copy(ph.p); if(ph.i>=0) hov=ph.i; }
+    else { st.line.scale.z=3; st.dot.visible=false; } }
+  XR.hover=hov;
+  const sig=hov+'|'+$('hudStep').textContent+'|'+panelStatus()+'|'+PB.map(b=>b.label+(b.on?1:0)).join(',');
+  if(sig!==XR.sig){ XR.sig=sig; drawPanel(PB); }
+  // manipulación
+  if(XR.two){ const t=XR.two, a=wpos(t.a.c), b=wpos(t.b.c), mid=a.clone().add(b).multiplyScalar(.5), v=b.clone().sub(a);
+    let s=v.length()/Math.max(1e-3,t.v0.length()); const s0=new V3().setFromMatrixScale(t.M0).x; s=Math.max(.004/s0,Math.min(.8/s0,s));
+    const q=new THREE.Quaternion().setFromUnitVectors(t.v0.clone().normalize(),v.clone().normalize());
+    new THREE.Matrix4().makeTranslation(mid.x,mid.y,mid.z).multiply(new THREE.Matrix4().makeRotationFromQuaternion(q)).multiply(new THREE.Matrix4().makeScale(s,s,s))
+      .multiply(new THREE.Matrix4().makeTranslation(-t.mid0.x,-t.mid0.y,-t.mid0.z)).multiply(t.M0).decompose(world.position,world.quaternion,world.scale);
+  }
+  for(const st of XR.ctrl){ if(st.grab && !(XR.two && st.grab.obj===world)) applyGrab(st); }
+  // sticks
+  for(const st of XR.ctrl){ const gp=st.src&&st.src.gamepad; if(!gp||gp.axes.length<4||st.grab) continue;
+    const x=dz(gp.axes[2]), y=dz(gp.axes[3]); if(!x&&!y) continue;
+    if(st.src.handedness==='left'){ const cam=renderer.xr.getCamera(camera), f=new V3(); cam.getWorldDirection(f); f.y=0; f.normalize(); const r=new V3(-f.z,0,f.x);
+      world.position.addScaledVector(f,y*dt*.9).addScaledVector(r,-x*dt*.9); }
+    else { const c=sectionCenterWorld(), q=new THREE.Quaternion().setFromAxisAngle(YA,-x*dt*1.3);
+      world.position.sub(c).applyQuaternion(q).add(c); world.quaternion.premultiply(q);
+      const ns=Math.max(.004,Math.min(.8,world.scale.x*Math.exp(-y*dt*1.1))), r=ns/world.scale.x; world.position.sub(c).multiplyScalar(r).add(c); world.scale.setScalar(ns); }
+  }
+}
+
+buildPolymer(); buildIons(); buildDyes(); buildWater();
+build(); seqTable(); resize(); refreshReadouts(true);
+controls.target.copy(focus()); controls.autoRotate=S.spin; fromHash();
+if(document.fonts) document.fonts.ready.then(()=>{ for(const k in labelMat) delete labelMat[k]; build(); drawChart(); });
+})();
+</script>
+</body></html>
