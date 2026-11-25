@@ -217,6 +217,15 @@ sub,sup{line-height:0}
           <button id="pPSS" aria-pressed="true">PSS · con anillo</button>
           <button id="pPVS" aria-pressed="false">PVS · sin anillo</button>
         </div>
+        <div style="margin-top:14px">
+          <h2 style="margin-bottom:8px">Tacticidad</h2>
+          <div class="seg seg3" role="group" aria-label="Tacticidad">
+            <button id="tcA" aria-pressed="true">Atáctica</button>
+            <button id="tcI" aria-pressed="false">Isotáctica · hélice 3₁</button>
+            <button id="tcNew">Otra cadena</button>
+          </div>
+          <p class="note" id="tactNote"></p>
+        </div>
         <div id="ringBlock" style="margin-top:14px">
           <h2 style="margin-bottom:8px">Giro de los fenilos</h2>
           <div class="seg seg4" role="group" aria-label="Giro de los fenilos">
@@ -273,7 +282,7 @@ sub,sup{line-height:0}
           <label><input type="checkbox" id="tChg" checked> Cargas</label>
           <label><input type="checkbox" id="tIon" checked> Iones Na⁺ / Cl⁻</label>
           <label><input type="checkbox" id="tDist" checked> Distancias entre anillos</label>
-          <label><input type="checkbox" id="tWat" checked> Agua de hidratación (PVS)</label>
+          <label><input type="checkbox" id="tWat" checked> Agua de hidratación</label>
         </div>
         <div class="legend" style="margin-top:12px">
           <span><i class="sw" style="background:#8a93ad"></i>C</span>
@@ -285,6 +294,7 @@ sub,sup{line-height:0}
           <span><i class="sw" style="background:#5cc46a"></i>Cl⁻</span>
           <span><i class="sw" style="background:#5b9cf5;opacity:.6"></i>cono: apantalla</span>
           <span><i class="sw" style="background:#f2a44b;opacity:.7"></i>toroide: desapantalla</span>
+          <span><i class="sw" style="background:#6fd6ff"></i>agua de la interfase (O)</span>
         </div>
       </section>
 
@@ -297,16 +307,18 @@ sub,sup{line-height:0}
         </div>
         <canvas id="nmr" aria-label="Espectro de 1H-RMN esquemático"></canvas>
         <p class="note" id="nmrNote"></p>
+        <p class="note" id="relNote" hidden></p>
       </section>
 
       <section class="learn">
         <h2>Qué muestran los trabajos</h2>
         <p id="dyeText"></p>
         <p id="aggText" hidden></p>
-        <p><b>La cadena en hélice 3₁.</b> Cada fenilo gira 120° respecto del anterior alrededor del eje, como en el poliestireno isotáctico cristalino (periodo de 6,65 Å cada tres monómeros), y así los anillos quedan lo más separados posible. En esta hélice ideal el anillo más cercano a otro es el de la unidad i+3, en la misma cara y a 6,65 Å; el vecino i+1 queda a unos 7 Å. Ambos están lejos del contacto π–π (3,5–4 Å), así que la hélice deja libres las caras de los anillos para el colorante.</p>
+        <p><b>La cadena en hélice 3₁.</b> (Modo «Isotáctica».) Cada fenilo gira 120° respecto del anterior alrededor del eje, como en el poliestireno isotáctico cristalino (periodo de 6,65 Å cada tres monómeros), y así los anillos quedan lo más separados posible. En esta hélice ideal el anillo más cercano a otro es el de la unidad i+3, en la misma cara y a 6,65 Å; el vecino i+1 queda a unos 7 Å. Ambos están lejos del contacto π–π (3,5–4 Å), así que la hélice deja libres las caras de los anillos para el colorante.</p>
         <p><b>Girar los fenilos.</b> El giro es alrededor del enlace C(cadena)–C(ipso), y ese eje pasa por el centroide del anillo: los centroides no se mueven y las distancias de 6,65 y 7,22 Å se mantienen. Cambia hacia dónde miran bordes y caras. Con el giro alternado a 90° (anillos impares sin girar, pares girados), el borde de un anillo apunta a la cara de su vecino i+3, que es la geometría borde–cara. Pero ese H queda a unos 4,5 Å del plano del otro anillo, contra ≈ 2,5 Å en un contacto en T: en la hélice ideal sería, a lo sumo, una atracción electrostática débil entre cuadrupolos. Con todos girados igual o al azar, el contacto más corto queda entre 4,7 y 6 Å, y ningún patrón produce choques entre H.</p>
         <p><b>¿Cuándo hay contacto real?</b> El PSS real es atáctico y en solución es un ovillo flexible. Los contactos entre fenilos vecinos aparecen cuando la cadena se aparta de la hélice; en poliestireno se detectan como fluorescencia de excímero, que según la regla de Hirayama se forma entre cromóforos separados por tres carbonos de cadena, justo la relación entre dos fenilos consecutivos.</p>
         <p><b>Dos fuerzas que la sal separa.</b> La atracción entre sulfonato (−) y colorante (+) es de largo alcance y el NaCl la apantalla. La interacción aromática entre anillos es de corto alcance y resiste la sal. Por eso, al subir el NaCl, los colorantes se despegan de PVS y siguen sobre PSS (tendencia cualitativa de los ensayos de diafiltración).</p>
+        <p><b>El agua que se va.</b> Antes de unirse, el anillo de PSS y el colorante están rodeados de agua de hidratación. Al apilarse, las moléculas de agua de la interfase (oxígeno celeste en el modelo) quedan sobrando y pasan al seno de la disolución, donde ganan libertad. Esa ganancia de entropía del agua es el componente hidrofóbico de la interacción aromática, que se suma a la dispersión y a la parte electrostática de corto alcance. Al subir el NaCl y soltarse el colorante, el agua vuelve a cubrir ambas caras. Con PVS no hay contacto aromático: el colorante conserva su esfera de hidratación y queda separado del polímero por agua.</p>
         <p><b>Cómo se ve en RMN.</b> La corriente de anillo de un aromático apantalla a los protones situados sobre su cara (cono azul) y los lleva a campo alto. Los que quedan en el plano del anillo (toroide naranja) se desapantallan. Un protón que apunta a la cara del anillo de PSS, como H6′ de la rodamina B, muestra el mayor corrimiento.</p>
         <p><b>Puente con el ADN.</b> Es la misma familia de interacciones que estabiliza el apilamiento de bases y la intercalación de colorantes en el ADN de la primera sección.</p>
       </section>
@@ -584,7 +596,7 @@ new ResizeObserver(resize).observe(stage); new ResizeObserver(drawChart).observe
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const dt=Math.min(.05,clock.getDelta()), tt=clock.elapsedTime;
-  if(PEL.visible){ updateDyes(tt,dt); ions.forEach(o=>o.m.position.copy(o.home).add(jit(o.ph,tt*.8,o.amp*.35)));
+  if(PEL.visible){ updateDyes(tt,dt); updateRelease(tt,dt); ions.forEach(o=>o.m.position.copy(o.home).add(jit(o.ph,tt*.8,o.amp*.35)));
     waters.forEach(w=>{ w.g.position.copy(w.home).add(jit(w.ph,tt*.9,.25)); w.g.rotation.y+=dt*w.sp; }); }
   if(inVR) xrUpdate(dt); else if(IM.on) immUpdate(dt);
   if(anim && !inVR && !IM.on){ const t=Math.min(1,(performance.now()-anim.s)/900), e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
@@ -598,7 +610,7 @@ const V3=THREE.Vector3, D=Math.PI/180, XA=new V3(1,0,0), YA=new V3(0,1,0), ZA=ne
 const PEL=new THREE.Group(); PEL.visible=false; world.add(PEL);
 const polyG=new THREE.Group(), dyeG=new THREE.Group(), ionG=new THREE.Group(), coneG=new THREE.Group();
 PEL.add(polyG,dyeG,ionG,coneG);
-const P={poly:'PSS', dye:'MB', pH:7, salt:0, cone:true, charges:true, ions:true, dist:true, tw:'alt', twAng:90, seed:0, water:true, agg:'H', ttc:'S'};
+const P={poly:'PSS', dye:'MB', pH:7, salt:0, cone:true, charges:true, ions:true, dist:true, tw:'alt', twAng:90, seed:0, water:true, agg:'H', ttc:'S', tact:'A', tseed:0};
 const EL={C:['#8a93ad',.34],N:['#6aa6ff',.36],O:['#ef6b6b',.36],S:['#f2c94c',.5],H:['#e8ecf5',.2],Na:['#b48cf2',.62],Cl:['#5cc46a',.85]};
 const ELM={}; for(const k in EL) ELM[k]=std(EL[k][0],{roughness:.4});
 const fillM=c=>std(c,{transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide});
@@ -717,12 +729,43 @@ function addSO3(m,from,S,d,e2,n){
   for(let j=0;j<3;j++){ const t=j*120*D; const O=S.clone().addScaledVector(d,.49).addScaledVector(e2,1.36*Math.cos(t)).addScaledVector(n,1.36*Math.sin(t)); m.atom(O,'O'); m.bond(S,O); }
   m.halo(S.clone().addScaledVector(d,.5),new V3(1.9,1.9,1.9),PM.neg); sulf.push(S.clone());
 }
+/* Orientación (azimut) de cada grupo colgante alrededor del eje.
+   Isotáctica: hélice 3₁ ideal (60° + 120°·k). Atáctica: azimut al azar dentro de ±80° del ideal,
+   aceptado solo si el centroide del anillo queda a ≥ 5,0 Å de los demás y a ≥ 3,0 Å de la cadena.
+   Los sitios de unión (y sus vecinos i±3 en el sándwich doble) conservan la geometría de la hélice. */
+function ringGeom(C,k,th){   // misma geometría que buildPolymer: centroide, carbonos e hidrógenos del anillo
+  const d=new V3(0,Math.cos(th),Math.sin(th)), n=new V3(0,-Math.sin(th),Math.cos(th)).applyAxisAngle(d,ringPhi(k)*D);
+  const e2=new V3().crossVectors(n,d).normalize(), c=C[2*k+1].clone().addScaledVector(d,2.9), pts=ring3(c,d.clone().negate(),e2);
+  return {c, at:pts, H:[1,2,4,5].map(j=>pts[j].clone().addScaledVector(pts[j].clone().sub(c).normalize(),1.08)), S:pts[3].clone().addScaledVector(d,1.77)};
+}
+function ringsFit(a,b){
+  if(a.c.distanceTo(b.c)<4.6 || a.S.distanceTo(b.S)<4.0) return false;
+  for(const h of a.H){ for(const g of b.H) if(h.distanceTo(g)<2.3) return false; for(const x of b.at) if(h.distanceTo(x)<2.6) return false; }
+  for(const h of b.H) for(const x of a.at) if(h.distanceTo(x)<2.6) return false;
+  for(const x of a.at) for(const y of b.at) if(x.distanceTo(y)<3.3) return false;
+  return true;
+}
+function azimuths(C){
+  const base=k=>(60+120*k)*D, out=new Array(12);
+  if(P.tact==='I') return out.fill(0).map((_,k)=>base(k));
+  const fixed=new Set(SITES); if(sandwichOn()) SITES.forEach(k=>fixed.add(partnerOf(k)));
+  const geo={}; fixed.forEach(k=>{ out[k]=base(k); geo[k]=ringGeom(C,k,out[k]); });
+  const r=rng(4242+P.tseed*131);
+  for(let k=0;k<12;k++){ if(fixed.has(k)) continue; let ok=false;
+    for(let t=0;t<80&&!ok;t++){
+      const th=base(k)+(r()*2-1)*80*D, g=ringGeom(C,k,th);
+      ok=Object.values(geo).every(o=>ringsFit(g,o)) && g.at.every((x,ai)=>C.every((b,bi)=>Math.abs(bi-(2*k+1))<=1 || x.distanceTo(b)>=2.9));
+      if(ok){ out[k]=th; geo[k]=g; } }
+    if(!ok){ out[k]=base(k); geo[k]=ringGeom(C,k,out[k]); } }
+  return out;
+}
 function buildPolymer(){
   clearGroup(polyG); clearGroup(coneG); clearGroup(distG); sites=[]; sulf=[]; ringC=[]; ringInfo=[];
   const m=new Mol(), C=[...Array(24)].map((_,i)=>{ const a=60*i*D; return new V3((i-11.5)*HRISE, HR*Math.cos(a), HR*Math.sin(a)); });
   C.forEach((p,i)=>{ m.atom(p,'C'); if(i) m.bond(C[i-1],p); });
+  const TH=azimuths(C);
   for(let k=0;k<12;k++){
-    const cb=C[2*k+1], th=(60+120*k)*D;
+    const cb=C[2*k+1], th=TH[k];
     const d=new V3(0,Math.cos(th),Math.sin(th)), n=new V3(0,-Math.sin(th),Math.cos(th));   // radial y tangencial
     if(P.poly==='PSS'){
       const nr=n.clone().applyAxisAngle(d,ringPhi(k)*D), e2=new V3().crossVectors(nr,d).normalize();
@@ -787,6 +830,7 @@ function buildIons(){
 function applyLayers(){
   polyHalos.forEach(h=>h.visible=P.charges); dyes.forEach(d=>d.halos.forEach(h=>h.visible=P.charges));
   dyes.forEach(d=>{ if(d.shell) d.shell.visible=P.water&&P.poly==='PVS'; });
+  if(typeof relG!=='undefined') relG.visible=P.water&&P.poly==='PSS';
   ionG.visible=P.ions; coneG.visible=P.cone && P.poly==='PSS'; distG.visible=P.dist && P.poly==='PSS'; if(typeof waterG!=='undefined') waterG.visible=P.water && STACKS();
 }
 
@@ -839,13 +883,62 @@ function sandwichPose(m,s,others){   // fenilo del C5 entre los anillos i e i±3
 }
 function solvePoses(){
   dyes.forEach(m=>m.bound=null);
-  if(P.poly!=='PSS'||!sites.length) return;
+  if(P.poly!=='PSS'||!sites.length){ buildRelease(); return; }
   const others=[];
   dyes.forEach((m,i)=>{ const s=sites[i]; if(!s) return;
     const wantEdge=(P.dye==='TTC'&&P.ttc==='E')||(P.dye==='RB'&&P.pH===7);
     const best = (sandwichOn()&&m.phc) ? sandwichPose(m,s,others) : solveSite(m,s,(wantEdge&&m.edge)?'edge':'face',others);
     m.bound={p:best.p,q:best.q}; others.push(...best.atoms);
   });
+  buildRelease();
+}
+/* Agua de hidratación desplazada al formarse el contacto aromático (solo PSS).
+   Cada sitio tiene una capa de agua sobre la cara del anillo de PSS y una esfera alrededor del colorante.
+   Cuando el colorante llega a su pose de unión, las moléculas de la interfase pasan al seno de la disolución. */
+const relG=new THREE.Group(); PEL.add(relG); let relW=[], relCount=-1;
+const ELMW=std('#6fd6ff',{roughness:.35,emissive:col('#6fd6ff'),emissiveIntensity:.15});
+const DYE_SHELL={
+  MB:[[-2.4,0,3.2],[2.4,0,3.2],[-2.4,0,-3.2],[2.4,0,-3.2],[-6.6,.4,0],[6.6,.4,0],[0,3.4,0],[0,-3,0]],
+  RB:[[-2.4,.3,3.3],[2.4,.3,3.3],[-2.4,.3,-3.3],[2.4,.3,-3.3],[-7.6,.4,0],[7.6,.4,0],[0,-6.6,2.8],[0,-6.6,-2.8]],
+  TTC:[[0,0,3.2],[2.2,-1.2,3],[-2.2,-1.2,-3],[0,0,-3.2],[3.8,1.2,0],[-3.8,1.2,0],[0,4.2,2.8],[0,4.2,-2.8]]};
+function relWater(r){
+  const hx=Math.sin(52.25*D)*.96, hy=Math.cos(52.25*D)*.96, g=new THREE.Group(), O=new THREE.Mesh(G.sph,ELMW); O.scale.setScalar(.38); g.add(O);
+  for(const sg of [1,-1]){ const hp=new V3(sg*hx,hy,0), H=new THREE.Mesh(G.sph,ELM.H); H.scale.setScalar(.2); H.position.copy(hp); g.add(H); g.add(cyl(new V3(),hp,.08,PM.bond)); }
+  g.rotation.set(r()*6.28,r()*6.28,r()*6.28); relG.add(g); return g;
+}
+function buildRelease(){
+  clearGroup(relG); relW=[]; relCount=-1;
+  if(P.poly!=='PSS'||!sites.length) return;
+  const r=rng(77);
+  sites.forEach((s,i)=>{ const m=dyes[i]; if(!m||!m.bound) return;
+    let a, P0;
+    if(sandwichOn()&&m.phc){ const A=ringC[s.k], B=ringC[partnerOf(s.k)]; a=B.clone().sub(A).normalize(); P0=A.clone().lerp(B,.5).addScaledVector(s.d,1.5); }
+    else { const side=Math.sign(m.bound.p.clone().sub(s.c).dot(s.n))||1; a=s.n.clone().multiplyScalar(side); P0=s.c.clone().addScaledVector(a,3.3); }
+    const u=new V3().crossVectors(a,Math.abs(a.x)<.9?XA:YA).normalize(), v=new V3().crossVectors(a,u);
+    const bulk=()=>P0.clone().addScaledVector(s.d,10+r()*7).addScaledVector(u,(r()-.5)*9).addScaledVector(v,(r()-.5)*9).addScaledVector(a,(r()-.5)*5);
+    // capa sobre la cara del anillo de PSS (se libera siempre)
+    for(let j=0;j<6;j++){ const t=j/6*6.2832+r()*.4, home=P0.clone().addScaledVector(u,2.4*Math.cos(t)).addScaledVector(v,2.4*Math.sin(t)).addScaledVector(a,(r()-.5)*.8);
+      relW.push({g:relWater(r),i,home,exp:bulk(),rel:true,ph:relW.length*1.9}); }
+    // esfera del colorante: se liberan solo las que quedan en la interfase en la pose de unión
+    (DYE_SHELL[P.dye]||[]).forEach(o=>{ const off=new V3(...o), atBound=off.clone().applyQuaternion(m.bound.q).add(m.bound.p);
+      const rc2=(sandwichOn()&&m.phc)?[ringC[s.k],ringC[partnerOf(s.k)]]:[s.c];
+      const near=rc2.some(c=>atBound.distanceTo(c)<5.2) || polyAtoms.some(b=>b.distanceToSquared(atBound)<7.3);
+      relW.push({g:relWater(r),i,off,exp:bulk(),rel:near,ph:relW.length*1.9}); });
+    relW.forEach(w=>{ if(w.i===i&&!w.g.userData.init){ w.g.position.copy(w.home||w.off.clone().applyQuaternion(m.g.quaternion).add(m.g.position)); w.g.userData.init=1; } });
+  });
+  applyLayers();
+}
+function updateRelease(t,dt){
+  if(!relW.length){ if(relCount!==0){ relCount=0; $('relNote').hidden=true; } return; }
+  const nb=nBound(), k=1-Math.exp(-dt*2.2), now=performance.now(); let n=0;
+  relW.forEach(w=>{ const m=dyes[w.i]; if(!m) return;
+    const docked = w.i<nb && m.bound && !m.held && !(m.free&&now<m.free) && m.g.position.distanceTo(m.bound.p)<2.5;
+    const out = docked && w.rel;
+    const target = out ? w.exp : (w.off ? w.off.clone().applyQuaternion(m.g.quaternion).add(m.g.position) : w.home);
+    w.g.position.lerp(target.clone().add(jit(w.ph,t*.9,out?.45:.15)),w.off&&!out?.25:k); w.g.rotation.y+=dt*.4;
+    if(out) n++; });
+  if(n!==relCount){ relCount=n; const tot=relW.filter(w=>w.rel).length;
+    $('relNote').hidden=false; $('relNote').innerHTML=`<b>Agua desplazada:</b> ${n} de ${tot} moléculas de la interfase han pasado al seno de la disolución.`; }
 }
 const jit=(i,t,a)=>new V3(Math.sin(t*.7+i*1.7)+.5*Math.sin(t*1.9+i*.3), Math.sin(t*.5+i*2.3)+.5*Math.sin(t*1.3+i), Math.sin(t*.6+i*.9)+.5*Math.sin(t*1.7+i*2)).multiplyScalar(a);
 const freePos=(i,t,N)=>new V3(-14+28*i/Math.max(1,N-1),-13-(i%2)*4,6).add(jit(i,t*.5,2.2));
@@ -960,6 +1053,8 @@ function pelRefresh(){
   press('dMB',P.dye==='MB'); press('dRB',P.dye==='RB'); press('dTTC',P.dye==='TTC');
   press('ph7',P.pH===7); press('ph2',P.pH===2); $('phSeg').hidden=P.dye!=='RB';
   $('saltOut').textContent=fmt(P.salt,3)+' M';
+  press('tcA',P.tact==='A'); press('tcI',P.tact==='I'); $('tcNew').disabled=P.tact!=='A';
+  $('tactNote').textContent = P.tact==='A' ? 'Cada grupo colgante apunta al azar (hasta ±80° de la hélice ideal), sin que los anillos se superpongan. Los tres sitios de unión conservan localmente la geometría de la hélice.' : 'Cada grupo gira 120° respecto del anterior: hélice 3₁ ideal, como en el poliestireno isotáctico cristalino.';
   press('twNone',P.tw==='none'); press('twSame',P.tw==='same'); press('twAlt',P.tw==='alt'); press('twRand',P.tw==='rand');
   $('ringBlock').hidden=P.poly!=='PSS'; const angOn=P.tw==='same'||P.tw==='alt';
   $('ptw').disabled=!angOn; $('twWrap').classList.toggle('off',!angOn); $('ptwOut').textContent=P.twAng+'°';
@@ -991,6 +1086,8 @@ function pelRefresh(){
 }
 function setPoly(p){ P.poly=p; buildPolymer(); buildIons(); buildDyes(); buildWater(); pelRefresh(); goView('side'); }
 function setDye(d){ P.dye=d; buildPolymer(); buildDyes(); buildWater(); pelRefresh(); if(P.poly==='PVS') goView('side'); }
+const setTact=(t,newSeed)=>{ P.tact=t; if(newSeed) P.tseed++; buildPolymer(); buildIons(); pelRefresh(); };
+$('tcA').onclick=()=>setTact('A'); $('tcI').onclick=()=>setTact('I'); $('tcNew').onclick=()=>setTact('A',true);
 const setTw=t=>{ if(t==='rand'&&P.tw==='rand') P.seed++; P.tw=t; buildPolymer(); pelRefresh(); };
 $('twNone').onclick=()=>setTw('none'); $('twSame').onclick=()=>setTw('same'); $('twAlt').onclick=()=>setTw('alt'); $('twRand').onclick=()=>setTw('rand');
 $('ptw').oninput=e=>{ P.twAng=+e.target.value; buildPolymer(); pelRefresh(); };
@@ -1146,7 +1243,7 @@ function panelButtons(){
     if(P.dye==='RB'&&P.poly==='PVS') row([{label:'Sándwich H',on:P.agg==='H',act:clickEl('agH')},{label:'Oblicuo',on:P.agg==='O',act:clickEl('agO')},{label:'Cabeza–cola J',on:P.agg==='J',act:clickEl('agJ')}]);
     if(P.dye==='TTC'&&P.poly==='PSS') row([{label:'Borde–cara',on:P.ttc==='E',act:clickEl('tmE')},{label:'Cara–cara',on:P.ttc==='F',act:clickEl('tmF')},{label:'Sándwich doble',on:P.ttc==='S',act:clickEl('tmS')}]);
     row([{label:'NaCl  −',act:salt(-.01)},{label:'NaCl  +',act:salt(.01)},{label:'Cargas',on:P.charges,act:clickEl('tChg')},{label:'Agua',on:P.water,act:clickEl('tWat')}]);
-    row([{label:'Restablecer vista',act:()=>{ resetStructures(); fitVR(); }}]);
+    row([{label:'Atáctica',on:P.tact==='A',act:clickEl('tcA')},{label:'Isotáctica',on:P.tact==='I',act:clickEl('tcI')},{label:'Otra cadena',act:clickEl('tcNew')},{label:'Restablecer',act:()=>{ resetStructures(); fitVR(); }}]);
   }
   return B;
 }
