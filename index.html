@@ -33,6 +33,10 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14
 .immbar .tip{flex:1 1 300px;min-width:0;font-size:12px;line-height:1.45;color:var(--muted);background:rgba(10,15,29,.75);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
 .immbar .tip b{color:var(--fg);font-weight:600}
 .immmove{position:absolute;left:max(14px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
+.vrgo{position:absolute;top:12px;right:max(14px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:min(360px,calc(100% - 28px))}
+.vrgo .btn{font-size:17px;padding:14px 22px;border-radius:10px;box-shadow:0 6px 24px rgba(79,209,197,.35)}
+.vrgo .msg{font-size:12px;line-height:1.4;color:var(--fg);background:rgba(10,15,29,.85);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.app.imm .vrgo{display:none}
 .immmove .btn{width:44px;height:44px;padding:0;display:grid;place-items:center;font-size:16px;touch-action:none}
 .panel{overflow-y:auto;border-left:1px solid var(--line);background:var(--panel);padding-block:22px 28px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
 h1{font-family:var(--f-display);font-weight:700;font-size:28px;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
@@ -112,6 +116,10 @@ sub,sup{line-height:0}
     <div class="immmove" id="immMove" hidden>
       <button class="btn" id="mvF" aria-label="Avanzar">▲</button>
       <button class="btn" id="mvB" aria-label="Retroceder">▼</button>
+    </div>
+    <div class="vrgo" id="vrGo" hidden>
+      <button class="btn primary" id="vrGoBtn">Entrar en VR</button>
+      <div class="msg" id="vrMsg" hidden></div>
     </div>
     <div class="views">
       <button class="btn primary" id="v360">Explorar en 360°</button>
@@ -572,23 +580,37 @@ function fitVR(){
   else if(S.mode==='step'){ const s=.11, c=focus(); world.scale.setScalar(s); world.position.set(0,1.3-c.y*s,-.85); }
   else { const s=.04, c=focus(); world.scale.setScalar(s); world.position.set(0,1.25-c.y*s,-1.1); }
 }
-const vrBtn=$('vrBtn'), vrNote=$('vrNote');
-if(navigator.xr && navigator.xr.isSessionSupported){
-  navigator.xr.isSessionSupported('immersive-vr').then(ok=>{
-    if(ok){ vrBtn.disabled=false; vrNote.textContent='VR disponible en este navegador.'; }
-    else vrNote.textContent='Este navegador no ofrece VR inmersiva. Abre la página en el navegador del Meta Quest.';
-  }).catch(()=>{ vrNote.textContent='La VR está bloqueada dentro de esta vista. Abre la página directamente en el navegador del Meta Quest.'; });
-} else vrNote.textContent='Este navegador no tiene WebXR. Abre la página en el navegador del Meta Quest.';
-vrBtn.onclick=async()=>{
+const vrBtn=$('vrBtn'), vrNote=$('vrNote'), vrGo=$('vrGo'), vrMsg=$('vrMsg');
+function vrSay(t){ vrNote.textContent=t; vrMsg.textContent=t; vrMsg.hidden=!t; }
+let vrStarting=false;
+async function startVR(granted){
+  if(inVR||vrStarting) return; vrStarting=true;
   try{
     if(IM.on) exitImm();
-    const session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor','hand-tracking']});
-    renderer.xr.setReferenceSpaceType('local-floor'); await renderer.xr.setSession(session);
+    let session, space='local-floor';
+    try{ session=await navigator.xr.requestSession('immersive-vr',{optionalFeatures:['local-floor','bounded-floor','hand-tracking']}); }
+    catch(e){ session=await navigator.xr.requestSession('immersive-vr'); space='local'; }   // sin funciones opcionales
+    renderer.xr.setReferenceSpaceType(space);
+    try{ await renderer.xr.setSession(session); }
+    catch(e){ if(space==='local') throw e; renderer.xr.setReferenceSpaceType('local'); space='local'; await renderer.xr.setSession(session); }
     if(renderer.xr.setFoveation) renderer.xr.setFoveation(1);
     inVR=true; controls.enabled=false; xrEnter(); fitVR();
-    session.addEventListener('end',()=>{ inVR=false; xrExit(); controls.enabled=true; world.scale.setScalar(1); world.position.set(0,0,0); world.quaternion.identity(); goView('side'); });
-  }catch(err){ vrNote.textContent='No se pudo iniciar la sesión VR: '+(err.message||err); }
-};
+    if(space==='local'){ world.position.y-=1.4; panel.position.y-=1.4; }   // sin piso conocido: la cabeza está en y=0
+    vrSay('');
+    session.addEventListener('end',()=>{ inVR=false; xrExit(); controls.enabled=true; panel.position.set(-.8,1.2,-.62);
+      world.scale.setScalar(1); world.position.set(0,0,0); world.quaternion.identity(); goView('side'); });
+  }catch(err){ if(!granted) vrSay('No se pudo entrar en VR: '+(err&&err.message||err)+'. Recarga la página y vuelve a tocar «Entrar en VR».'); }
+  finally{ vrStarting=false; }
+}
+if(window.isSecureContext===false) vrSay('La VR necesita una dirección https. Abre la página desde https://…');
+else if(navigator.xr && navigator.xr.isSessionSupported){
+  navigator.xr.isSessionSupported('immersive-vr').then(ok=>{
+    if(ok){ vrBtn.disabled=false; vrGo.hidden=false; vrNote.textContent='VR disponible: toca «Entrar en VR».'; }
+    else vrSay('Este navegador no ofrece VR inmersiva. Abre la página en el navegador del Meta Quest.');
+  }).catch(()=>{ vrNote.textContent='La VR está bloqueada dentro de esta vista. Abre la página directamente en el navegador del Meta Quest.'; });
+  try{ navigator.xr.addEventListener('sessiongranted',()=>startVR(true)); }catch(_){}
+} else vrNote.textContent='Este navegador no tiene WebXR. Abre la página en el navegador del Meta Quest.';
+vrBtn.onclick=()=>startVR(); $('vrGoBtn').onclick=()=>startVR();
 
 /* ---------- bucle ---------- */
 function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); drawChart(); }
